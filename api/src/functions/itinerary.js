@@ -70,11 +70,11 @@ const DEFAULT_DAYS = [
     date_str: 'Fri, Sep 18',
     day_of_week: 'Friday',
     status: 'GREEN',
-    status_label: 'Friday night / PTO',
-    morning_plan: 'Suggested PTO Day. Daytime relaxation or sightseeing (Meow Wolf Grapevine / "Meow place").',
-    evening_plan: 'Dinner, get ready, then Escapade 2001.',
-    night_plan: 'Club only if you still feel up for it.',
-    notes: 'Escapade 2001 Latin mega-club night. Dress to impress!'
+    status_label: 'OFF / PTO (Confirmed)',
+    morning_plan: '🎉 OFF TODAY (PTO): Sleep in, relaxed brunch, then Meow Wolf Grapevine ("The Real Unreal") immersive multiverse.',
+    evening_plan: 'Dinner & drinks near hotel, get ready, then head to Escapade 2001.',
+    night_plan: 'Escapade 2001 (Multi-room Latin mega-club: cumbia, salsa, bachata, norteño).',
+    notes: 'Confirmed full day off! No work rush. Meow Wolf + mega party night.'
   },
   {
     id: 'day-6',
@@ -154,12 +154,13 @@ const DEFAULT_DAYS = [
     date_str: 'Fri, Sep 25',
     day_of_week: 'Friday',
     status: 'GREEN',
-    status_label: 'Friday / PTO',
-    morning_plan: 'Suggested PTO Day. Daytime activities (Dallas Arboretum or Museum District).',
-    evening_plan: 'Dinner and evening plans (Lower Greenville rooftop drinks).',
-    night_plan: 'Rest and recharge for weekend.',
-    notes: 'Relaxed Friday preparing for Six Flags weekend.'
+    status_label: 'OFF / PTO (Confirmed)',
+    morning_plan: '🎉 OFF TODAY (PTO): Dallas Arboretum & Autumn Pumpkin Village on White Rock Lake (or Bishop Arts stroll & tacos).',
+    evening_plan: 'Lower Greenville rooftop sunset dinner & cocktails at HG Sply Co.',
+    night_plan: 'Relaxed drinks or live music patio recharge for Six Flags weekend.',
+    notes: 'Confirmed full day off! Lakeside gardens, rooftop sunset, no work stress.'
   },
+
   {
     id: 'day-13',
     day_number: 13,

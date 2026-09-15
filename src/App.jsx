@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import CowboysWidget from './components/CowboysWidget';
 import MasterSchedule from './components/MasterSchedule';
+import CalendarGridView from './components/CalendarGridView';
+import UltimatePlannerBanner from './components/UltimatePlannerBanner';
 import IdeaBucket from './components/IdeaBucket';
+
 import SwapModal from './components/SwapModal';
 import EditModal from './components/EditModal';
 import DallasGuideModal from './components/DallasGuideModal';
@@ -29,8 +32,9 @@ export default function App() {
   const [bucketItems, setBucketItems] = useState(INITIAL_BUCKET);
   const [userMode, setUserMode] = useState(getLocalUserMode());
   const [syncStatus, setSyncStatus] = useState('syncing');
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'schedule', 'bucket'
+  const [activeTab, setActiveTab] = useState('calendar'); // 'calendar', 'cards', 'bucket', 'all'
   const [filterMode, setFilterMode] = useState('all'); // 'all', 'yellow', 'green'
+
   const [searchQuery, setSearchQuery] = useState('');
   
   const [dragItem, setDragItem] = useState(null);
@@ -266,16 +270,32 @@ export default function App() {
       {/* Cowboys Schedule & Conflict Widget */}
       <CowboysWidget />
 
+      {/* Ultimate Planner Overview Banner & Smart Suggestions */}
+      <UltimatePlannerBanner
+        onOpenAiScout={() => setIsAiScoutOpen(true)}
+        onOpenDallasGuide={() => setIsDallasGuideOpen(true)}
+        days={days}
+        onAddQuickIdea={handleAddBucketItem}
+      />
+
       {/* Navigation and Filters Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
         {/* Main Tabs */}
         <div className="nav-tabs" style={{ margin: 0, border: 'none', padding: 0 }}>
           <button
-            className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveTab('all')}
+            className={`tab-btn ${activeTab === 'calendar' ? 'active' : ''}`}
+            onClick={() => setActiveTab('calendar')}
           >
             <Calendar size={16} />
-            <span>Master Itinerary</span>
+            <span>🗓️ Calendar Grid</span>
+            <span className="badge-count">7-Day Matrix</span>
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'cards' ? 'active' : ''}`}
+            onClick={() => setActiveTab('cards')}
+          >
+            <Calendar size={16} />
+            <span>📋 Daily Cards</span>
             <span className="badge-count">15 Days</span>
           </button>
           <button
@@ -283,8 +303,15 @@ export default function App() {
             onClick={() => setActiveTab('bucket')}
           >
             <Lightbulb size={16} />
-            <span>Ideas Bucket</span>
+            <span>💡 Ideas Bucket</span>
             <span className="badge-count">{bucketItems.length}</span>
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            <Sparkles size={16} />
+            <span>🌟 All-in-One</span>
           </button>
         </div>
 
@@ -356,21 +383,80 @@ export default function App() {
         </div>
       </div>
 
-      {/* Render Main Content */}
+      {/* Render Calendar Grid View */}
+      {activeTab === 'calendar' && (
+        <CalendarGridView
+          days={days}
+          onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
+          onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+          onSwapSlots={handleSwapSlots}
+          onUpdateSlot={handleUpdateSlot}
+          dragItem={dragItem}
+          setDragItem={setDragItem}
+        />
+      )}
+
+      {/* Render Daily Cards View */}
+      {activeTab === 'cards' && (
+        <MasterSchedule
+          days={days}
+          onSwapSlots={handleSwapSlots}
+          onUpdateSlot={handleUpdateSlot}
+          onMoveToBucket={handleMoveToBucket}
+          onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
+          onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+          dragItem={dragItem}
+          setDragItem={setDragItem}
+          filterMode={filterMode}
+          searchQuery={searchQuery}
+        />
+      )}
+
+      {/* Render Ideas Bucket */}
+      {activeTab === 'bucket' && (
+        <IdeaBucket
+          bucketItems={bucketItems}
+          days={days}
+          onScheduleItem={handleScheduleItem}
+          onToggleReaction={handleToggleReaction}
+          onAddBucketItem={handleAddBucketItem}
+          onDeleteBucketItem={handleDeleteBucketItem}
+          onOpenAiScout={() => setIsAiScoutOpen(true)}
+          userMode={userMode}
+          setDragItem={setDragItem}
+        />
+      )}
+
+      {/* Render All-in-One View */}
       {activeTab === 'all' && (
         <>
-          <MasterSchedule
+          <CalendarGridView
             days={days}
-            onSwapSlots={handleSwapSlots}
-            onUpdateSlot={handleUpdateSlot}
-            onMoveToBucket={handleMoveToBucket}
             onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
             onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+            onSwapSlots={handleSwapSlots}
+            onUpdateSlot={handleUpdateSlot}
             dragItem={dragItem}
             setDragItem={setDragItem}
-            filterMode={filterMode}
-            searchQuery={searchQuery}
           />
+
+          <div style={{ marginTop: '2.5rem' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: '#f8fafc' }}>
+              📋 Detailed Day-by-Day Slot Breakdown
+            </h3>
+            <MasterSchedule
+              days={days}
+              onSwapSlots={handleSwapSlots}
+              onUpdateSlot={handleUpdateSlot}
+              onMoveToBucket={handleMoveToBucket}
+              onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
+              onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+              dragItem={dragItem}
+              setDragItem={setDragItem}
+              filterMode={filterMode}
+              searchQuery={searchQuery}
+            />
+          </div>
 
           <div style={{ marginTop: '3rem' }}>
             <IdeaBucket
@@ -388,19 +474,6 @@ export default function App() {
         </>
       )}
 
-      {activeTab === 'bucket' && (
-        <IdeaBucket
-          bucketItems={bucketItems}
-          days={days}
-          onScheduleItem={handleScheduleItem}
-          onToggleReaction={handleToggleReaction}
-          onAddBucketItem={handleAddBucketItem}
-          onDeleteBucketItem={handleDeleteBucketItem}
-          onOpenAiScout={() => setIsAiScoutOpen(true)}
-          userMode={userMode}
-          setDragItem={setDragItem}
-        />
-      )}
 
 
       {/* Swap Modal */}
