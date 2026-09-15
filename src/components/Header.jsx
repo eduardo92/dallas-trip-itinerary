@@ -1,0 +1,94 @@
+import React from 'react';
+import { Calendar, User, RefreshCw, Sparkles, MapPin, CheckCircle2, Cloud, RotateCcw } from 'lucide-react';
+
+export default function Header({
+  userMode,
+  setUserMode,
+  syncStatus,
+  onOpenDallasGuide,
+  onResetItinerary,
+  daysCount = 15,
+  yellowCount = 9,
+  greenCount = 6
+}) {
+  return (
+    <header className="header-card">
+      <div className="header-top">
+        <div className="title-group">
+          <div className="trip-badge-icon">🤠</div>
+          <div>
+            <h1 className="trip-title">Dallas Trip Itinerary</h1>
+            <div className="trip-subtitle">
+              <span>Sept 14 – Sept 28, 2026</span>
+              <span>•</span>
+              <span>15 Days Master Schedule</span>
+              <span>•</span>
+              <span style={{ color: '#f59e0b', fontWeight: 600 }}>Eduardo & Sister</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="header-actions">
+          {/* Identity switcher */}
+          <div className="user-toggle" title="Switch viewpoint for notes and reactions">
+            <button
+              className={`user-btn ${userMode === 'eduardo' ? 'active' : ''}`}
+              onClick={() => setUserMode('eduardo')}
+            >
+              🤠 Eduardo
+            </button>
+            <button
+              className={`user-btn sister ${userMode === 'sister' ? 'active' : ''}`}
+              onClick={() => setUserMode('sister')}
+            >
+              🌟 Sister
+            </button>
+          </div>
+
+          {/* Sync badge */}
+          <div className="sync-badge" title="Live sync with Turso cloud SQLite database">
+            <span className="sync-dot"></span>
+            <Cloud size={13} />
+            <span>{syncStatus === 'syncing' ? 'Syncing...' : 'Turso Cloud Synced'}</span>
+          </div>
+
+          {/* Dallas Guide button */}
+          <button className="btn-secondary" onClick={onOpenDallasGuide} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}>
+            <MapPin size={14} color="#f59e0b" />
+            <span>Dallas Hotspots</span>
+          </button>
+
+          {/* Reset button */}
+          <button 
+            className="btn-secondary" 
+            onClick={onResetItinerary} 
+            title="Reset itinerary back to master default schedule"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.775rem', padding: '0.45rem 0.75rem', color: '#94a3b8' }}
+          >
+            <RotateCcw size={13} />
+            <span>Reset</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="trip-stats-bar">
+        <div className="stat-chip">
+          <Calendar size={15} color="#60a5fa" />
+          <span>Total: <strong>{daysCount} Days</strong></span>
+        </div>
+        <div className="stat-chip yellow-pill">
+          <span>💼 Work-fit Evenings: <strong>{yellowCount} Days</strong> (Free after 6 PM)</span>
+        </div>
+        <div className="stat-chip green-pill">
+          <span>🎉 Full-Day / PTO / Weekends: <strong>{greenCount} Days</strong></span>
+        </div>
+        <div className="stat-chip" style={{ color: '#c084fc' }}>
+          <span>✨ <strong>Empire of the Sun Concert</strong>: Sun, Sep 20</span>
+        </div>
+        <div className="stat-chip" style={{ color: '#38bdf8' }}>
+          <span>🏈 <strong>Cowboys vs Commanders</strong>: Sep 20 (Conflict Note)</span>
+        </div>
+      </div>
+    </header>
+  );
+}
