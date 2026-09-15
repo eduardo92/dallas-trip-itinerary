@@ -509,6 +509,179 @@ async function handleReset(request, context) {
   }
 }
 
+/**
+ * AI Scout recommendations handler
+ * Queries Anthropic Claude first; if credits are depleted or fails, automatically falls back to OpenAI GPT-4o-mini!
+ */
+async function handleAiScout(request, context) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const query = body.query || 'Top authentic Dallas experiences, food, and nightlife for siblings';
+    const userMode = body.userMode || 'eduardo';
+
+    const systemPrompt = `You are a local Dallas & Fort Worth travel expert curator helping Eduardo and his sister plan their trip to Dallas (Sept 14-28, 2026).
+Key trip context:
+- Sibling trip (brother & sister).
+- Weekdays (Mon-Thu) are workdays (free after 6 PM).
+- Weekends and Fridays are full adventure days.
+- They love good food (Texas BBQ, tacos, desserts), live music, country dancing/two-stepping, cool neighborhoods (Deep Ellum, Bishop Arts, Stockyards, Uptown, Lower Greenville), and immersive attractions.
+- Sunday Sep 20 night is the Empire of the Sun concert at Dos Equis Pavilion.
+- The user is asking for ideas: "${query}".
+
+Respond ONLY with valid JSON matching this schema:
+{
+  "recommendations": [
+    {
+      "title": "Name of venue or activity",
+      "category": "Food & Texas BBQ" | "Nightlife & Dancing" | "Culture & Immersion" | "Outdoors & Social" | "Views & Sightseeing" | "Shopping & Districts",
+      "description": "Engaging, authentic 2-sentence description of what makes this spot special.",
+      "location": "Neighborhood or city (e.g. Deep Ellum, Bishop Arts, Fort Worth, Uptown)",
+      "best_time": "e.g. Thursday evening after 6 PM, or Weekend afternoon",
+      "estimated_duration": "e.g. 1.5 - 2 hours",
+      "why_it_fits": "Why Eduardo & his sister will love it based on their schedule"
+    }
+  ]
+}
+Provide exactly 4 to 6 top-tier, high quality, accurate recommendations.`;
+
+    let rawJsonText = null;
+    let providerUsed = null;
+
+    // 1. Try Anthropic Claude
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (anthropicKey) {
+      try {
+        const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': anthropicKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-haiku-20241022',
+            max_tokens: 1500,
+            system: 'Respond strictly in JSON.',
+            messages: [{ role: 'user', content: systemPrompt }]
+          })
+        });
+
+        if (anthropicRes.ok) {
+          const anthropicData = await anthropicRes.json();
+          rawJsonText = anthropicData.content?.[0]?.text;
+          providerUsed = 'Anthropic Claude';
+        } else {
+          const errText = await anthropicRes.text();
+          context.warn('Anthropic API returned error, falling back to OpenAI:', errText);
+        }
+      } catch (err) {
+        context.warn('Anthropic call failed, falling back:', err.message);
+      }
+    }
+
+    // 2. Fallback to OpenAI (GPT-4o-mini)
+    const openAiKey = process.env.OPENAI_API_KEY;
+    if (!rawJsonText && openAiKey) {
+      try {
+        const openAiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            response_format: { type: 'json_object' },
+            messages: [
+              { role: 'system', content: 'You are a Dallas travel expert. Output strictly JSON.' },
+              { role: 'user', content: systemPrompt }
+            ],
+            max_tokens: 1500
+          })
+        });
+
+        if (openAiRes.ok) {
+          const openAiData = await openAiRes.json();
+          rawJsonText = openAiData.choices?.[0]?.message?.content;
+          providerUsed = 'OpenAI GPT-4o-mini';
+        } else {
+          const errText = await openAiRes.text();
+          context.error('OpenAI API returned error:', errText);
+        }
+      } catch (err) {
+        context.error('OpenAI call failed:', err.message);
+      }
+    }
+
+    if (!rawJsonText) {
+      // High-quality fallback recommendations in case APIs are offline
+      return json(200, {
+        success: true,
+        provider: 'Curated Dallas Database',
+        recommendations: [
+          {
+            title: 'Midnight Rambler (Cocktail Den)',
+            category: 'Nightlife & Dancing',
+            description: 'Underground, glamorous speakeasy inside The Joule Hotel with craft cocktails and deep soul/vinyl DJ sets.',
+            location: 'Downtown Dallas',
+            best_time: 'Thursday or Friday night after 8 PM',
+            estimated_duration: '2 hours',
+            why_it_fits: 'Great for a relaxed post-work craft drink with chic ambiance.'
+          },
+          {
+            title: 'Velvet Taco & Katy Trail Stroll',
+            category: 'Food & Texas BBQ',
+            description: 'Funky gourmet tacos (slow-smoked brisket, spicy tikka chicken, red velvet cake) right off the Katy Trail.',
+            location: 'Uptown / Henderson',
+            best_time: 'Lunch or easy dinner after 6 PM',
+            estimated_duration: '1.5 hours',
+            why_it_fits: 'Casual, fast, delicious, and easy commute.'
+          },
+          {
+            title: 'White Rock Lake Sunset & Bath House Cultural Center',
+            category: 'Outdoors & Social',
+            description: 'Beautiful 1,000-acre city lake with sailboat watching, pelicans, and stunning sunset views looking back at Dallas.',
+            location: 'East Dallas',
+            best_time: '6:30 PM golden hour',
+            estimated_duration: '1.5 hours',
+            why_it_fits: 'Breezy and scenic escape right next to the Dallas Arboretum.'
+          },
+          {
+            title: 'Cidercade Dallas (Bishop Arts Edge)',
+            category: 'Culture & Immersion',
+            description: 'Over 275+ retro arcade games, pinball, and skeeball with 30+ house-crafted hard ciders, hard seltzers, and kombuchas.',
+            location: 'Design District / Trinity Groves',
+            best_time: 'Weekday evening after 7 PM',
+            estimated_duration: '2 hours',
+            why_it_fits: 'Only $12 unlimited free play gaming. High fun, zero stress.'
+          }
+        ]
+      });
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(rawJsonText);
+    } catch {
+      // Clean possible markdown code fences
+      const cleaned = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+      parsed = JSON.parse(cleaned);
+    }
+
+    const list = parsed.recommendations || parsed.items || [];
+    return json(200, {
+      success: true,
+      provider: providerUsed,
+      query,
+      recommendations: list
+    });
+
+  } catch (err) {
+    context.error('AI Scout error:', err);
+    return json(500, { success: false, error: err.message });
+  }
+}
+
 app.http('getItinerary', {
   route: 'itinerary',
   methods: ['GET'],
@@ -544,10 +717,18 @@ app.http('resetItinerary', {
   handler: handleReset
 });
 
+app.http('aiScout', {
+  route: 'itinerary/ai-scout',
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  handler: handleAiScout
+});
+
 module.exports = {
   handleGet,
   handleUpdateSlot,
   handleSwapSlots,
   handleSaveBucketItem,
-  handleReset
+  handleReset,
+  handleAiScout
 };

@@ -5,12 +5,14 @@ export default function Header({
   userMode,
   setUserMode,
   syncStatus,
+  onOpenAiScout,
   onOpenDallasGuide,
   onResetItinerary,
   daysCount = 15,
   yellowCount = 9,
   greenCount = 6
 }) {
+
   return (
     <header className="header-card">
       <div className="header-top">
@@ -52,11 +54,31 @@ export default function Header({
             <span>{syncStatus === 'syncing' ? 'Syncing...' : 'Turso Cloud Synced'}</span>
           </div>
 
+          {/* AI Dallas Scout button */}
+          <button 
+            className="btn-primary" 
+            onClick={onOpenAiScout} 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.4rem', 
+              fontSize: '0.825rem', 
+              padding: '0.45rem 0.95rem',
+              background: 'linear-gradient(135deg, #f59e0b, #ec4899)',
+              color: '#ffffff',
+              boxShadow: '0 2px 10px rgba(236, 72, 153, 0.35)'
+            }}
+          >
+            <Sparkles size={14} color="#ffffff" />
+            <span>AI Dallas Scout</span>
+          </button>
+
           {/* Dallas Guide button */}
           <button className="btn-secondary" onClick={onOpenDallasGuide} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}>
             <MapPin size={14} color="#f59e0b" />
-            <span>Dallas Hotspots</span>
+            <span>Hotspots</span>
           </button>
+
 
           {/* Reset button */}
           <button 

@@ -11,9 +11,11 @@ export default function IdeaBucket({
   onToggleReaction,
   onAddBucketItem,
   onDeleteBucketItem,
+  onOpenAiScout,
   userMode,
   setDragItem
 }) {
+
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -79,11 +81,29 @@ export default function IdeaBucket({
           </div>
         </div>
 
-        <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-          <Plus size={16} />
-          <span>Add Custom Idea</span>
-        </button>
+        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {onOpenAiScout && (
+            <button
+              className="btn-primary"
+              onClick={onOpenAiScout}
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #ec4899)',
+                color: '#ffffff',
+                boxShadow: '0 2px 10px rgba(236, 72, 153, 0.35)'
+              }}
+            >
+              <Sparkles size={16} />
+              <span>Ask AI Scout ✨</span>
+            </button>
+          )}
+
+          <button className="btn-secondary" onClick={() => setShowAddModal(true)}>
+            <Plus size={16} />
+            <span>Add Custom Idea</span>
+          </button>
+        </div>
       </div>
+
 
       {/* Category filters */}
       <div className="bucket-categories">

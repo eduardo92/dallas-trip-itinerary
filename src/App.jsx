@@ -6,6 +6,7 @@ import IdeaBucket from './components/IdeaBucket';
 import SwapModal from './components/SwapModal';
 import EditModal from './components/EditModal';
 import DallasGuideModal from './components/DallasGuideModal';
+import AiScoutModal from './components/AiScoutModal';
 import { 
   fetchItineraryFromCloud, 
   updateCloudSlot, 
@@ -36,7 +37,9 @@ export default function App() {
   const [swapModalInfo, setSwapModalInfo] = useState(null);
   const [editModalInfo, setEditModalInfo] = useState(null);
   const [isDallasGuideOpen, setIsDallasGuideOpen] = useState(false);
+  const [isAiScoutOpen, setIsAiScoutOpen] = useState(false);
   const [notification, setNotification] = useState(null);
+
 
   const showNotification = (msg) => {
     setNotification(msg);
@@ -251,12 +254,14 @@ export default function App() {
         userMode={userMode}
         setUserMode={handleUserModeChange}
         syncStatus={syncStatus}
+        onOpenAiScout={() => setIsAiScoutOpen(true)}
         onOpenDallasGuide={() => setIsDallasGuideOpen(true)}
         onResetItinerary={handleResetItinerary}
         daysCount={days.length}
         yellowCount={yellowCount}
         greenCount={greenCount}
       />
+
 
       {/* Cowboys Schedule & Conflict Widget */}
       <CowboysWidget />
@@ -375,6 +380,7 @@ export default function App() {
               onToggleReaction={handleToggleReaction}
               onAddBucketItem={handleAddBucketItem}
               onDeleteBucketItem={handleDeleteBucketItem}
+              onOpenAiScout={() => setIsAiScoutOpen(true)}
               userMode={userMode}
               setDragItem={setDragItem}
             />
@@ -390,10 +396,12 @@ export default function App() {
           onToggleReaction={handleToggleReaction}
           onAddBucketItem={handleAddBucketItem}
           onDeleteBucketItem={handleDeleteBucketItem}
+          onOpenAiScout={() => setIsAiScoutOpen(true)}
           userMode={userMode}
           setDragItem={setDragItem}
         />
       )}
+
 
       {/* Swap Modal */}
       <SwapModal
@@ -419,6 +427,17 @@ export default function App() {
         onClose={() => setIsDallasGuideOpen(false)}
         onAddQuickIdea={handleAddBucketItem}
       />
+
+      {/* AI Scout Modal */}
+      <AiScoutModal
+        isOpen={isAiScoutOpen}
+        onClose={() => setIsAiScoutOpen(false)}
+        days={days}
+        onAddToBucket={handleAddBucketItem}
+        onScheduleItem={handleScheduleItem}
+        userMode={userMode}
+      />
     </div>
   );
 }
+

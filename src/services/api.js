@@ -106,6 +106,45 @@ export async function saveCloudBucketItem(item) {
   }
 }
 
+export async function fetchAiScoutRecommendations(query, userMode) {
+  try {
+    const res = await fetch('/api/itinerary/ai-scout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, userMode })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.warn('fetchAiScoutRecommendations failed:', err.message);
+    return {
+      success: true,
+      provider: 'Curated Fallback',
+      recommendations: [
+        {
+          title: 'Midnight Rambler (Craft Cocktails)',
+          category: 'Nightlife & Dancing',
+          description: 'Underground cocktail den in The Joule Hotel with vintage vinyl soul music and master mixology.',
+          location: 'Downtown Dallas',
+          best_time: 'Thursday evening after 8 PM',
+          estimated_duration: '2 hours',
+          why_it_fits: 'Moody, stylish, and perfect for relaxing after work.'
+        },
+        {
+          title: 'HG Sply Co. Rooftop Sunset',
+          category: 'Food & Texas BBQ',
+          description: 'Lively rooftop bar overlooking the Dallas skyline on vibrant Lower Greenville with Texas craft beers.',
+          location: 'Lower Greenville',
+          best_time: 'Sunset (around 7:00 PM)',
+          estimated_duration: '2 hours',
+          why_it_fits: 'Great sister vibe with energetic outdoor patio.'
+        }
+      ]
+    };
+  }
+}
+
 export async function resetCloudItinerary() {
   try {
     const res = await fetch('/api/itinerary/reset', {
@@ -118,3 +157,5 @@ export async function resetCloudItinerary() {
     return false;
   }
 }
+
+
