@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { ArrowLeftRight, X, Calendar, Clock } from 'lucide-react';
+import { ArrowLeftRight, X, Calendar, Sun, Sunset, Moon } from 'lucide-react';
+
+const SLOT_LABELS = {
+  morning: '☀️ Daytime (Work / Sightseeing)',
+  evening: '🌇 After-Work Activity',
+  night: '🌙 Night Plan'
+};
+
+const SLOT_SHORT = {
+  morning: '☀️ Daytime',
+  evening: '🌇 After-Work',
+  night: '🌙 Night'
+};
 
 export default function SwapModal({
   isOpen,
@@ -33,11 +45,11 @@ export default function SwapModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px' }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <ArrowLeftRight size={18} color="#f59e0b" />
-            <h3 className="modal-title">Swap Itinerary Slots</h3>
+            <h3 className="modal-title">Swap Activity Slot</h3>
           </div>
           <button className="modal-close-btn" onClick={onClose}><X size={18} /></button>
         </div>
@@ -45,21 +57,26 @@ export default function SwapModal({
         <div style={{ marginBottom: '1.25rem' }}>
           {/* Source Slot Box */}
           <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '10px', padding: '0.85rem', marginBottom: '1rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-              Source: Day {sourceDay?.day_number} ({sourceDay?.date_str}) • {sourceInfo.slotType}
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
+              <span>Source: Day {sourceDay?.day_number} ({sourceDay?.date_str})</span>
+              <span style={{ color: '#fbbf24' }}>{SLOT_LABELS[sourceInfo.slotType] || sourceInfo.slotType}</span>
             </div>
-            <div style={{ fontSize: '0.875rem', color: '#f8fafc' }}>
+            <div style={{ fontSize: '0.875rem', color: '#f8fafc', lineHeight: 1.4 }}>
               {sourceText}
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#f59e0b' }}>
-            <ArrowLeftRight size={20} />
+          <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <div style={{ height: '1px', flex: 1, background: 'rgba(245, 158, 11, 0.2)' }}></div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#f59e0b', padding: '0.2rem 0.6rem', borderRadius: '9999px', background: 'rgba(245, 158, 11, 0.1)' }}>
+              ⇄ Swap With Target
+            </span>
+            <div style={{ height: '1px', flex: 1, background: 'rgba(245, 158, 11, 0.2)' }}></div>
           </div>
 
-          {/* Target Slot Selection */}
+          {/* Target Day Selection */}
           <div className="form-group">
-            <label className="form-label">Swap with which Day?</label>
+            <label className="form-label">1. Choose Target Day:</label>
             <select
               className="form-select"
               value={targetDayId}
@@ -67,43 +84,51 @@ export default function SwapModal({
             >
               {days.map(d => (
                 <option key={d.id} value={d.id}>
-                  Day {d.day_number} ({d.date_str}) — {d.status === 'YELLOW' ? 'Workday' : 'PTO / Weekend'}
+                  Day {d.day_number} ({d.date_str}) — {d.status === 'YELLOW' ? 'Workday (~6 PM)' : 'OFF / Weekend'}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Target Slot Selection */}
           <div className="form-group">
-            <label className="form-label">Target Time Slot</label>
+            <label className="form-label">2. Choose Target Slot (Daytime, After-Work, or Night):</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-              {['morning', 'evening', 'night'].map(slot => (
+              {[
+                { key: 'morning', label: '☀️ Daytime' },
+                { key: 'evening', label: '🌇 After-Work' },
+                { key: 'night', label: '🌙 Night Plan' }
+              ].map(slot => (
                 <button
-                  key={slot}
+                  key={slot.key}
                   type="button"
-                  onClick={() => setTargetSlot(slot)}
+                  onClick={() => setTargetSlot(slot.key)}
                   style={{
-                    padding: '0.5rem',
+                    padding: '0.6rem 0.4rem',
                     borderRadius: '8px',
-                    border: targetSlot === slot ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
-                    background: targetSlot === slot ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.03)',
-                    color: targetSlot === slot ? '#fbbf24' : '#94a3b8',
+                    border: targetSlot === slot.key ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
+                    background: targetSlot === slot.key ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255,255,255,0.03)',
+                    color: targetSlot === slot.key ? '#fbbf24' : '#94a3b8',
                     fontSize: '0.8rem',
-                    fontWeight: 600,
-                    textTransform: 'capitalize'
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s'
                   }}
                 >
-                  {slot}
+                  {slot.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Target Slot Preview */}
+          {/* Target Slot Current Content Preview */}
           <div style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '0.85rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-              Will Swap with: Day {targetDay?.day_number} ({targetDay?.date_str}) • {targetSlot}
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
+              <span>Target: Day {targetDay?.day_number} ({targetDay?.date_str})</span>
+              <span style={{ color: '#38bdf8' }}>{SLOT_SHORT[targetSlot]}</span>
             </div>
-            <div style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>
+            <div style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: 1.4 }}>
               {targetText}
             </div>
           </div>
@@ -115,7 +140,7 @@ export default function SwapModal({
           </button>
           <button type="button" className="btn-primary" onClick={handleSwap}>
             <ArrowLeftRight size={15} />
-            <span>Confirm Swap</span>
+            <span>Confirm Slot Swap</span>
           </button>
         </div>
       </div>

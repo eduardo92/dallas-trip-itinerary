@@ -117,12 +117,12 @@ export default function MasterSchedule({
                 <div className="slot-header">
                   <div className="slot-label morning">
                     <Sun size={12} />
-                    <span>Morning</span>
+                    <span>☀️ Daytime</span>
                   </div>
                   <div className="slot-actions">
                     <button
                       className="slot-btn"
-                      title="Quick swap this slot"
+                      title="Quick swap this daytime slot"
                       onClick={() => onOpenSwapModal(day.id, 'morning', day.morning_plan)}
                     >
                       <ArrowLeftRight size={12} />
@@ -146,7 +146,7 @@ export default function MasterSchedule({
                 <div className="slot-content-text">{day.morning_plan}</div>
               </div>
 
-              {/* Evening Slot */}
+              {/* Evening / After-Work Slot */}
               <div
                 className={`time-slot ${dragOverSlot === `${day.id}-evening` ? 'drop-hover' : ''}`}
                 draggable
@@ -158,12 +158,12 @@ export default function MasterSchedule({
                 <div className="slot-header">
                   <div className="slot-label evening">
                     <Sunset size={12} />
-                    <span>Evening</span>
+                    <span>🌇 After-Work</span>
                   </div>
                   <div className="slot-actions">
                     <button
                       className="slot-btn"
-                      title="Quick swap this slot"
+                      title="Quick swap this after-work slot"
                       onClick={() => onOpenSwapModal(day.id, 'evening', day.evening_plan)}
                     >
                       <ArrowLeftRight size={12} />
@@ -199,12 +199,12 @@ export default function MasterSchedule({
                 <div className="slot-header">
                   <div className="slot-label night">
                     <Moon size={12} />
-                    <span>Night</span>
+                    <span>🌙 Night Plan</span>
                   </div>
                   <div className="slot-actions">
                     <button
                       className="slot-btn"
-                      title="Quick swap this slot"
+                      title="Quick swap this night slot"
                       onClick={() => onOpenSwapModal(day.id, 'night', day.night_plan)}
                     >
                       <ArrowLeftRight size={12} />
@@ -227,6 +227,7 @@ export default function MasterSchedule({
                 </div>
                 <div className="slot-content-text">{day.night_plan}</div>
               </div>
+
             </div>
 
             {/* Notes box */}

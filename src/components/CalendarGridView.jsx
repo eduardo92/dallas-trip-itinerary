@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Calendar as CalIcon, Sun, Sunset, Moon, Sparkles, AlertCircle, 
   ArrowLeftRight, Edit3, MapPin, CheckCircle2, BookmarkPlus
@@ -14,10 +14,8 @@ export default function CalendarGridView({
   dragItem,
   setDragItem
 }) {
-  // Split into 3 weeks
-  // Week 1: Day 1 (Mon 14) - Day 7 (Sun 20)
-  // Week 2: Day 8 (Mon 21) - Day 14 (Sun 27)
-  // Week 3: Day 15 (Mon 28)
+  const [dragOverKey, setDragOverKey] = useState(null);
+
   const week1 = days.slice(0, 7);
   const week2 = days.slice(7, 14);
   const week3 = days.slice(14, 15);
@@ -28,8 +26,16 @@ export default function CalendarGridView({
     { title: 'Departure Week: Sept 28, 2026', days: week3, ptoNote: 'Checkout & Flight Home to Leon' }
   ];
 
+  const handleDragStart = (e, dayId, slotType, text) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'slot', dayId, slotType, text }));
+    if (setDragItem) setDragItem({ type: 'slot', dayId, slotType, text });
+  };
+
   const handleDrop = (e, targetDayId, targetSlot) => {
     e.preventDefault();
+    e.stopPropagation();
+    setDragOverKey(null);
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
       if (data.type === 'slot') {
@@ -39,7 +45,7 @@ export default function CalendarGridView({
         onUpdateSlot(targetDayId, targetSlot, data.title + (data.description ? ` (${data.description})` : ''));
       }
     } catch (err) {
-      console.error(err);
+      console.error('Drop error:', err);
     }
   };
 
@@ -62,7 +68,6 @@ export default function CalendarGridView({
           <div className="calendar-7col-grid">
             {w.days.map(day => {
               const isPtoFriday = day.day_number === 5 || day.day_number === 12;
-              const isWeekend = day.day_number === 6 || day.day_number === 7 || day.day_number === 13 || day.day_number === 14;
               const isGreen = day.status === 'GREEN';
               const isSep20 = day.day_number === 7;
 
@@ -70,7 +75,6 @@ export default function CalendarGridView({
                 <div
                   key={day.id}
                   className={`calendar-day-cell ${isGreen ? 'green-cell' : 'yellow-cell'} ${isSep20 ? 'conflict-cell' : ''}`}
-                  onClick={() => onSelectDay && onSelectDay(day)}
                 >
                   {/* Top Bar of Cell */}
                   <div className="cell-top-bar">
@@ -87,7 +91,7 @@ export default function CalendarGridView({
                     </div>
                   </div>
 
-                  {/* Sep 20 conflict badge */}
+                  {/* Sep 20 conflict alert */}
                   {isSep20 && (
                     <div className="cell-alert-badge">
                       <AlertCircle size={11} />
@@ -95,72 +99,135 @@ export default function CalendarGridView({
                     </div>
                   )}
 
-                  {/* 3 mini slots */}
+                  {/* 3 Dedicated Slots (Daytime, After-Work, Night) with Slot-Level Swapping */}
                   <div className="cell-slots-container">
-                    {/* Morning */}
+                    
+                    {/* Slot 1: Daytime Activity / Work */}
                     <div 
-                      className="cell-slot morning"
-                      onDragOver={e => e.preventDefault()}
+                      className={`cell-slot morning ${dragOverKey === `${day.id}-morning` ? 'drop-target-active' : ''}`}
+                      draggable
+                      onDragStart={e => handleDragStart(e, day.id, 'morning', day.morning_plan)}
+                      onDragOver={e => { e.preventDefault(); setDragOverKey(`${day.id}-morning`); }}
+                      onDragLeave={() => setDragOverKey(null)}
                       onDrop={e => handleDrop(e, day.id, 'morning')}
                     >
-                      <div className="slot-dot morning"></div>
-                      <div className="slot-mini-text">
-                        <strong>Morn:</strong> {day.morning_plan}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.675rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase' }}>
+                          <Sun size={11} />
+                          <span>Daytime</span>
+                        </div>
+                        <div className="cell-slot-actions">
+                          <button
+                            type="button"
+                            className="cell-slot-btn"
+                            title="Swap Daytime Slot"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenSwapModal(day.id, 'morning', day.morning_plan);
+                            }}
+                          >
+                            <ArrowLeftRight size={11} />
+                          </button>
+                          <button
+                            type="button"
+                            className="cell-slot-btn"
+                            title="Edit Daytime Slot"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenEditModal(day.id, 'morning', day.morning_plan);
+                            }}
+                          >
+                            <Edit3 size={11} />
+                          </button>
+                        </div>
                       </div>
+                      <div className="slot-mini-text">{day.morning_plan}</div>
                     </div>
 
-                    {/* Evening */}
+                    {/* Slot 2: After-Work Activity */}
                     <div 
-                      className="cell-slot evening"
-                      onDragOver={e => e.preventDefault()}
+                      className={`cell-slot evening ${dragOverKey === `${day.id}-evening` ? 'drop-target-active' : ''}`}
+                      draggable
+                      onDragStart={e => handleDragStart(e, day.id, 'evening', day.evening_plan)}
+                      onDragOver={e => { e.preventDefault(); setDragOverKey(`${day.id}-evening`); }}
+                      onDragLeave={() => setDragOverKey(null)}
                       onDrop={e => handleDrop(e, day.id, 'evening')}
                     >
-                      <div className="slot-dot evening"></div>
-                      <div className="slot-mini-text">
-                        <strong>Eve:</strong> {day.evening_plan}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.675rem', fontWeight: 700, color: '#fb923c', textTransform: 'uppercase' }}>
+                          <Sunset size={11} />
+                          <span>After-Work</span>
+                        </div>
+                        <div className="cell-slot-actions">
+                          <button
+                            type="button"
+                            className="cell-slot-btn"
+                            title="Swap After-Work Slot"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenSwapModal(day.id, 'evening', day.evening_plan);
+                            }}
+                          >
+                            <ArrowLeftRight size={11} />
+                          </button>
+                          <button
+                            type="button"
+                            className="cell-slot-btn"
+                            title="Edit After-Work Slot"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenEditModal(day.id, 'evening', day.evening_plan);
+                            }}
+                          >
+                            <Edit3 size={11} />
+                          </button>
+                        </div>
                       </div>
+                      <div className="slot-mini-text">{day.evening_plan}</div>
                     </div>
 
-                    {/* Night */}
+                    {/* Slot 3: Night / Nightlife Plan */}
                     <div 
-                      className="cell-slot night"
-                      onDragOver={e => e.preventDefault()}
+                      className={`cell-slot night ${dragOverKey === `${day.id}-night` ? 'drop-target-active' : ''}`}
+                      draggable
+                      onDragStart={e => handleDragStart(e, day.id, 'night', day.night_plan)}
+                      onDragOver={e => { e.preventDefault(); setDragOverKey(`${day.id}-night`); }}
+                      onDragLeave={() => setDragOverKey(null)}
                       onDrop={e => handleDrop(e, day.id, 'night')}
                     >
-                      <div className="slot-dot night"></div>
-                      <div className="slot-mini-text">
-                        <strong>Night:</strong> {day.night_plan}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.675rem', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase' }}>
+                          <Moon size={11} />
+                          <span>Night Plan</span>
+                        </div>
+                        <div className="cell-slot-actions">
+                          <button
+                            type="button"
+                            className="cell-slot-btn"
+                            title="Swap Night Slot"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenSwapModal(day.id, 'night', day.night_plan);
+                            }}
+                          >
+                            <ArrowLeftRight size={11} />
+                          </button>
+                          <button
+                            type="button"
+                            className="cell-slot-btn"
+                            title="Edit Night Slot"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenEditModal(day.id, 'night', day.night_plan);
+                            }}
+                          >
+                            <Edit3 size={11} />
+                          </button>
+                        </div>
                       </div>
+                      <div className="slot-mini-text">{day.night_plan}</div>
                     </div>
-                  </div>
 
-                  {/* Cell Footer Quick Actions */}
-                  <div className="cell-footer-actions">
-                    <button
-                      type="button"
-                      className="cell-action-btn"
-                      title="Quick swap this day"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenSwapModal(day.id, 'evening', day.evening_plan);
-                      }}
-                    >
-                      <ArrowLeftRight size={12} />
-                      <span>Swap</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="cell-action-btn"
-                      title="Edit day plans"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenEditModal(day.id, 'evening', day.evening_plan);
-                      }}
-                    >
-                      <Edit3 size={12} />
-                      <span>Edit</span>
-                    </button>
                   </div>
                 </div>
               );

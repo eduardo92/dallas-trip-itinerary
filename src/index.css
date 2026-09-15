@@ -1293,22 +1293,62 @@ a:hover {
 }
 
 .cell-slot {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 6px;
-  padding: 0.4rem 0.5rem;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
   font-size: 0.75rem;
   line-height: 1.35;
   display: flex;
-  align-items: flex-start;
-  gap: 0.35rem;
+  flex-direction: column;
+  gap: 0.25rem;
   transition: all 0.15s;
+  cursor: grab;
 }
 
 .cell-slot:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
 }
+
+.cell-slot.drop-target-active {
+  background: rgba(245, 158, 11, 0.18) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.cell-slot-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+
+.cell-slot:hover .cell-slot-actions {
+  opacity: 1;
+}
+
+.cell-slot-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 0.15rem 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cell-slot-btn:hover {
+  background: rgba(245, 158, 11, 0.3);
+  border-color: #f59e0b;
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
 
 .slot-dot {
   width: 6px;
