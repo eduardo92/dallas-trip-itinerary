@@ -3,6 +3,15 @@ import { INITIAL_DAYS, INITIAL_BUCKET } from '../data/defaultData';
 const STORAGE_DAYS_KEY = 'dallas_trip_days_v1';
 const STORAGE_BUCKET_KEY = 'dallas_trip_bucket_v1';
 const STORAGE_SISTER_MODE = 'dallas_trip_user_mode';
+const STORAGE_THEME = 'dallas_trip_theme_mode';
+
+export function getLocalTheme() {
+  return localStorage.getItem(STORAGE_THEME) || 'light';
+}
+
+export function setLocalTheme(theme) {
+  localStorage.setItem(STORAGE_THEME, theme);
+}
 
 export function getLocalUserMode() {
   return localStorage.getItem(STORAGE_SISTER_MODE) || 'eduardo';
@@ -11,6 +20,7 @@ export function getLocalUserMode() {
 export function setLocalUserMode(mode) {
   localStorage.setItem(STORAGE_SISTER_MODE, mode);
 }
+
 
 export function getStoredDays() {
   try {

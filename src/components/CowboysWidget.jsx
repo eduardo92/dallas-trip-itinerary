@@ -41,7 +41,7 @@ export default function CowboysWidget() {
               </button>
             </div>
 
-            <div style={{ marginBottom: '1rem', fontSize: '0.85rem', color: '#94a3b8' }}>
+            <div style={{ marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Here are the 5 Cowboys games scheduled before, during, and after your Sept 14–28 trip:
             </div>
 
@@ -56,7 +56,7 @@ export default function CowboysWidget() {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.35rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.05rem', color: '#f8fafc' }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
                           {game.matchup}
                         </span>
                         {isConflict && (
@@ -65,17 +65,17 @@ export default function CowboysWidget() {
                           </span>
                         )}
                         {isBrazil && (
-                          <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.4)', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 700 }}>
+                          <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#2563eb', border: '1px solid rgba(59, 130, 246, 0.35)', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 700 }}>
                             🇧🇷 BRAZIL GAME
                           </span>
                         )}
                       </div>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isConflict ? '#f87171' : '#f59e0b' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isConflict ? '#dc2626' : 'var(--accent-amber)' }}>
                         {game.timingLabel}
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.85rem', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.85rem', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         <Calendar size={13} /> {game.date}
                       </span>
@@ -87,7 +87,7 @@ export default function CowboysWidget() {
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '0.8rem', color: isConflict ? '#fca5a5' : '#cbd5e1', background: 'rgba(0,0,0,0.25)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
+                    <div style={{ fontSize: '0.8rem', color: isConflict ? '#dc2626' : 'var(--text-secondary)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
                       {game.tripNote}
                     </div>
                   </div>

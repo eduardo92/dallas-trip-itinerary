@@ -1,9 +1,11 @@
 import React from 'react';
-import { Calendar, User, RefreshCw, Sparkles, MapPin, CheckCircle2, Cloud, RotateCcw } from 'lucide-react';
+import { Calendar, User, RefreshCw, Sparkles, MapPin, CheckCircle2, Cloud, RotateCcw, Sun, Moon } from 'lucide-react';
 
 export default function Header({
   userMode,
   setUserMode,
+  theme = 'light',
+  onToggleTheme,
   syncStatus,
   onOpenAiScout,
   onOpenDallasGuide,
@@ -12,6 +14,7 @@ export default function Header({
   yellowCount = 9,
   greenCount = 6
 }) {
+
 
   return (
     <header className="header-card">
@@ -80,7 +83,18 @@ export default function Header({
           </button>
 
 
+          {/* Theme Switcher */}
+          <button
+            className="theme-toggle-btn"
+            onClick={onToggleTheme}
+            title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+          >
+            {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+            <span>{theme === 'light' ? 'Dark' : 'Light'}</span>
+          </button>
+
           {/* Reset button */}
+
           <button 
             className="btn-secondary" 
             onClick={onResetItinerary} 

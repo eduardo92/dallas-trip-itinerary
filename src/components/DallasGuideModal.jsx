@@ -16,7 +16,7 @@ export default function DallasGuideModal({ isOpen, onClose, onAddQuickIdea }) {
           <button className="modal-close-btn" onClick={onClose}><X size={18} /></button>
         </div>
 
-        <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1.25rem' }}>
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
           Explore iconic Dallas & Fort Worth districts. Tap any highlight to add it directly to your unscheduled ideas bucket!
         </div>
 
@@ -25,17 +25,17 @@ export default function DallasGuideModal({ isOpen, onClose, onAddQuickIdea }) {
             <div
               key={n.name}
               style={{
-                background: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '12px',
                 padding: '1rem'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: '#f8fafc', fontWeight: 700 }}>
+                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 700 }}>
                   {n.name}
                 </h4>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--status-yellow-text)', background: 'var(--status-yellow-bg)', padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
                   {n.vibe}
                 </span>
               </div>
@@ -59,12 +59,12 @@ export default function DallasGuideModal({ isOpen, onClose, onAddQuickIdea }) {
                       });
                     }}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.04)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-medium)',
                       borderRadius: '6px',
                       padding: '0.35rem 0.6rem',
                       fontSize: '0.785rem',
-                      color: '#cbd5e1',
+                      color: 'var(--text-primary)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.35rem',
@@ -73,7 +73,7 @@ export default function DallasGuideModal({ isOpen, onClose, onAddQuickIdea }) {
                     }}
                     title="Click to add to your bucket"
                   >
-                    <PlusCircle size={12} color="#f59e0b" />
+                    <PlusCircle size={12} color="var(--accent-amber)" />
                     <span>{h}</span>
                   </button>
                 ))}

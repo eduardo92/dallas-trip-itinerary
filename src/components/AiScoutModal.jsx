@@ -164,11 +164,11 @@ export default function AiScoutModal({
         {!loading && results.length > 0 && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-              <span style={{ fontSize: '0.825rem', fontWeight: 700, color: '#f8fafc' }}>
+              <span style={{ fontSize: '0.825rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 Found {results.length} Curated Ideas:
               </span>
               {provider && (
-                <span style={{ fontSize: '0.725rem', color: '#34d399', background: 'rgba(16, 185, 129, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                <span style={{ fontSize: '0.725rem', color: '#047857', background: 'var(--status-green-bg)', border: '1px solid var(--status-green-border)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
                   ✓ {provider}
                 </span>
               )}
@@ -183,8 +183,8 @@ export default function AiScoutModal({
                   <div
                     key={idx}
                     style={{
-                      background: 'rgba(15, 23, 42, 0.6)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '12px',
                       padding: '1rem',
                       display: 'flex',
@@ -198,7 +198,7 @@ export default function AiScoutModal({
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ec4899', textTransform: 'uppercase' }}>
                           {rec.category}
                         </span>
-                        <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>
+                        <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                           {rec.title}
                         </h4>
                       </div>
@@ -209,9 +209,9 @@ export default function AiScoutModal({
                           type="button"
                           onClick={() => handleAddBucket(rec, idx)}
                           style={{
-                            background: isAddedToBucket ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.12)',
-                            border: isAddedToBucket ? '1px solid #10b981' : '1px solid rgba(245, 158, 11, 0.3)',
-                            color: isAddedToBucket ? '#34d399' : '#fbbf24',
+                            background: isAddedToBucket ? 'var(--status-green-bg)' : 'var(--status-yellow-bg)',
+                            border: isAddedToBucket ? '1px solid var(--status-green-border)' : '1px solid var(--status-yellow-border)',
+                            color: isAddedToBucket ? 'var(--status-green-text)' : 'var(--status-yellow-text)',
                             padding: '0.35rem 0.65rem',
                             borderRadius: '6px',
                             fontSize: '0.775rem',
@@ -251,19 +251,19 @@ export default function AiScoutModal({
                       </div>
                     </div>
 
-                    <p style={{ fontSize: '0.85rem', color: '#cbd5e1', lineHeight: '1.45' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
                       {rec.description}
                     </p>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.775rem', color: '#94a3b8' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.775rem', color: 'var(--text-muted)' }}>
                       {rec.location && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <MapPin size={12} color="#f59e0b" /> {rec.location}
+                          <MapPin size={12} color="var(--accent-amber)" /> {rec.location}
                         </span>
                       )}
                       {rec.best_time && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <Clock size={12} color="#60a5fa" /> {rec.best_time}
+                          <Clock size={12} color="#0284c7" /> {rec.best_time}
                         </span>
                       )}
                       {rec.estimated_duration && (

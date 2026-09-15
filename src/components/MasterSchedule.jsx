@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Sun, Moon, Sunset, ArrowLeftRight, Edit3, Trash2, BookmarkPlus, 
-  Sparkles, Heart, AlertCircle, Info, Calendar as CalIcon, Check, Copy
+  Sparkles, Heart, AlertCircle, Info, Calendar as CalIcon, Check, Copy, GripVertical
 } from 'lucide-react';
 
 export default function MasterSchedule({
@@ -14,9 +14,12 @@ export default function MasterSchedule({
   dragItem,
   setDragItem,
   filterMode,
-  searchQuery
+  searchQuery,
+  pickedSlot,
+  onPickSlot
 }) {
   const [dragOverSlot, setDragOverSlot] = useState(null);
+  const [activeDragSlot, setActiveDragSlot] = useState(null);
 
   const filteredDays = days.filter(d => {
     if (filterMode === 'yellow' && d.status !== 'YELLOW') return false;
@@ -29,13 +32,22 @@ export default function MasterSchedule({
     return true;
   });
 
-  const handleDragStart = (e, dayId, slotType, text) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'slot', dayId, slotType, text }));
-    setDragItem({ type: 'slot', dayId, slotType, text });
+  const handleDragStart = (e, dayId, dayNumber, slotType, slotLabel, text) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'slot', dayId, dayNumber, slotType, slotLabel, text }));
+    e.dataTransfer.effectAllowed = 'move';
+    setActiveDragSlot(`${dayId}-${slotType}`);
+    if (setDragItem) setDragItem({ type: 'slot', dayId, dayNumber, slotType, text });
+  };
+
+  const handleDragEnd = () => {
+    setActiveDragSlot(null);
+    setDragOverSlot(null);
+    if (setDragItem) setDragItem(null);
   };
 
   const handleDragOver = (e, slotKey) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     if (dragOverSlot !== slotKey) {
       setDragOverSlot(slotKey);
     }
@@ -50,19 +62,107 @@ export default function MasterSchedule({
   const handleDrop = (e, targetDayId, targetSlot) => {
     e.preventDefault();
     setDragOverSlot(null);
+    setActiveDragSlot(null);
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
       if (data.type === 'slot') {
         if (data.dayId === targetDayId && data.slotType === targetSlot) return;
         onSwapSlots(data.dayId, data.slotType, targetDayId, targetSlot);
       } else if (data.type === 'bucket') {
-        // Schedule from bucket into this slot
         onUpdateSlot(targetDayId, targetSlot, data.title + (data.description ? ` (${data.description})` : ''));
       }
     } catch (err) {
       console.error('Drop handling error:', err);
     }
-    setDragItem(null);
+    if (setDragItem) setDragItem(null);
+  };
+
+  const renderSlotBlock = (day, slotType, icon, label, color, planText) => {
+    const slotKey = `${day.id}-${slotType}`;
+    const isDragging = activeDragSlot === slotKey;
+    const isDropOver = dragOverSlot === slotKey;
+    const isPicked = pickedSlot && pickedSlot.dayId === day.id && pickedSlot.slotType === slotType;
+    const isAwaitingTarget = pickedSlot && !isPicked;
+
+    const handleSlotClick = () => {
+      if (pickedSlot) {
+        onPickSlot(day.id, day.day_number, slotType, label, planText);
+      }
+    };
+
+    return (
+      <div
+        key={slotType}
+        className={`time-slot ${isDragging ? 'dragging' : ''} ${isDropOver ? 'drop-hover' : ''} ${isPicked ? 'picked-up-origin' : ''} ${isAwaitingTarget ? 'awaiting-drop' : ''}`}
+        draggable
+        onDragStart={e => handleDragStart(e, day.id, day.day_number, slotType, label, planText)}
+        onDragEnd={handleDragEnd}
+        onDragOver={e => handleDragOver(e, slotKey)}
+        onDragLeave={e => handleDragLeave(e, slotKey)}
+        onDrop={e => handleDrop(e, day.id, slotType)}
+        onClick={handleSlotClick}
+        title={isAwaitingTarget ? `Click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently moving — click to cancel' : 'Drag to swap, or click ⇄ to pick up'}
+      >
+        <div className="slot-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span className="drag-handle-grip" title="Drag to swap or move">
+              <GripVertical size={13} />
+            </span>
+            <div className={`slot-label ${slotType}`} style={{ color }}>
+              {icon}
+              <span>{label}</span>
+            </div>
+          </div>
+
+          <div className="slot-actions">
+            <button
+              className={`slot-btn ${isPicked ? 'active-picked' : ''}`}
+              title={isPicked ? "Cancel swap" : isAwaitingTarget ? "Swap with this slot" : "Pick up to swap"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPickSlot(day.id, day.day_number, slotType, label, planText);
+              }}
+            >
+              <ArrowLeftRight size={12} />
+            </button>
+            <button
+              className="slot-btn"
+              title="Edit slot plan"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEditModal(day.id, slotType, planText);
+              }}
+            >
+              <Edit3 size={12} />
+            </button>
+            <button
+              className="slot-btn"
+              title="Move idea to unscheduled bucket"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveToBucket(planText, slotType, day.id);
+              }}
+            >
+              <BookmarkPlus size={12} />
+            </button>
+          </div>
+        </div>
+
+        {isAwaitingTarget && (
+          <div className="drop-hint-pill" style={{ marginBottom: '0.35rem' }}>
+            <span>⇄ Click or tap to swap here</span>
+          </div>
+        )}
+
+        {isPicked && (
+          <div className="picked-hint-pill" style={{ marginBottom: '0.35rem' }}>
+            <span>📍 Moving... click target slot</span>
+          </div>
+        )}
+
+        <div className="slot-content-text">{planText}</div>
+      </div>
+    );
   };
 
   return (
@@ -90,157 +190,37 @@ export default function MasterSchedule({
 
             {/* Special event alerts */}
             {isSep20Conflict && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '8px', padding: '0.45rem 0.65rem', fontSize: '0.75rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '0.45rem 0.65rem', fontSize: '0.75rem', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
                 <AlertCircle size={14} />
                 <span>Cowboys game conflicts with concert. Empire of the Sun priority!</span>
               </div>
             )}
 
             {isSixFlagsBrazil && (
-              <div style={{ background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', padding: '0.45rem 0.65rem', fontSize: '0.75rem', color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.45rem 0.65rem', fontSize: '0.75rem', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
                 <Info size={14} />
                 <span>Six Flags Fright Fest day. Cowboys vs Ravens is in Brazil!</span>
               </div>
             )}
 
-            {/* Slot 1: Morning */}
+            {/* 3 Dedicated Slots */}
             <div className="slots-container">
-              {/* Morning Slot */}
-              <div
-                className={`time-slot ${dragOverSlot === `${day.id}-morning` ? 'drop-hover' : ''}`}
-                draggable
-                onDragStart={e => handleDragStart(e, day.id, 'morning', day.morning_plan)}
-                onDragOver={e => handleDragOver(e, `${day.id}-morning`)}
-                onDragLeave={e => handleDragLeave(e, `${day.id}-morning`)}
-                onDrop={e => handleDrop(e, day.id, 'morning')}
-              >
-                <div className="slot-header">
-                  <div className="slot-label morning">
-                    <Sun size={12} />
-                    <span>☀️ Daytime</span>
-                  </div>
-                  <div className="slot-actions">
-                    <button
-                      className="slot-btn"
-                      title="Quick swap this daytime slot"
-                      onClick={() => onOpenSwapModal(day.id, 'morning', day.morning_plan)}
-                    >
-                      <ArrowLeftRight size={12} />
-                    </button>
-                    <button
-                      className="slot-btn"
-                      title="Edit slot text"
-                      onClick={() => onOpenEditModal(day.id, 'morning', day.morning_plan)}
-                    >
-                      <Edit3 size={12} />
-                    </button>
-                    <button
-                      className="slot-btn"
-                      title="Move idea to unscheduled bucket"
-                      onClick={() => onMoveToBucket(day.morning_plan, 'morning', day.id)}
-                    >
-                      <BookmarkPlus size={12} />
-                    </button>
-                  </div>
-                </div>
-                <div className="slot-content-text">{day.morning_plan}</div>
-              </div>
-
-              {/* Evening / After-Work Slot */}
-              <div
-                className={`time-slot ${dragOverSlot === `${day.id}-evening` ? 'drop-hover' : ''}`}
-                draggable
-                onDragStart={e => handleDragStart(e, day.id, 'evening', day.evening_plan)}
-                onDragOver={e => handleDragOver(e, `${day.id}-evening`)}
-                onDragLeave={e => handleDragLeave(e, `${day.id}-evening`)}
-                onDrop={e => handleDrop(e, day.id, 'evening')}
-              >
-                <div className="slot-header">
-                  <div className="slot-label evening">
-                    <Sunset size={12} />
-                    <span>🌇 After-Work</span>
-                  </div>
-                  <div className="slot-actions">
-                    <button
-                      className="slot-btn"
-                      title="Quick swap this after-work slot"
-                      onClick={() => onOpenSwapModal(day.id, 'evening', day.evening_plan)}
-                    >
-                      <ArrowLeftRight size={12} />
-                    </button>
-                    <button
-                      className="slot-btn"
-                      title="Edit slot text"
-                      onClick={() => onOpenEditModal(day.id, 'evening', day.evening_plan)}
-                    >
-                      <Edit3 size={12} />
-                    </button>
-                    <button
-                      className="slot-btn"
-                      title="Move idea to unscheduled bucket"
-                      onClick={() => onMoveToBucket(day.evening_plan, 'evening', day.id)}
-                    >
-                      <BookmarkPlus size={12} />
-                    </button>
-                  </div>
-                </div>
-                <div className="slot-content-text">{day.evening_plan}</div>
-              </div>
-
-              {/* Night Slot */}
-              <div
-                className={`time-slot ${dragOverSlot === `${day.id}-night` ? 'drop-hover' : ''}`}
-                draggable
-                onDragStart={e => handleDragStart(e, day.id, 'night', day.night_plan)}
-                onDragOver={e => handleDragOver(e, `${day.id}-night`)}
-                onDragLeave={e => handleDragLeave(e, `${day.id}-night`)}
-                onDrop={e => handleDrop(e, day.id, 'night')}
-              >
-                <div className="slot-header">
-                  <div className="slot-label night">
-                    <Moon size={12} />
-                    <span>🌙 Night Plan</span>
-                  </div>
-                  <div className="slot-actions">
-                    <button
-                      className="slot-btn"
-                      title="Quick swap this night slot"
-                      onClick={() => onOpenSwapModal(day.id, 'night', day.night_plan)}
-                    >
-                      <ArrowLeftRight size={12} />
-                    </button>
-                    <button
-                      className="slot-btn"
-                      title="Edit slot text"
-                      onClick={() => onOpenEditModal(day.id, 'night', day.night_plan)}
-                    >
-                      <Edit3 size={12} />
-                    </button>
-                    <button
-                      className="slot-btn"
-                      title="Move idea to unscheduled bucket"
-                      onClick={() => onMoveToBucket(day.night_plan, 'night', day.id)}
-                    >
-                      <BookmarkPlus size={12} />
-                    </button>
-                  </div>
-                </div>
-                <div className="slot-content-text">{day.night_plan}</div>
-              </div>
-
+              {renderSlotBlock(day, 'morning', <Sun size={12} />, '☀️ Daytime', '#0284c7', day.morning_plan)}
+              {renderSlotBlock(day, 'evening', <Sunset size={12} />, '🌇 After-Work', '#ea580c', day.evening_plan)}
+              {renderSlotBlock(day, 'night', <Moon size={12} />, '🌙 Night Plan', '#7c3aed', day.night_plan)}
             </div>
 
             {/* Notes box */}
             {day.notes && (
               <div className="day-notes-box">
-                <Sparkles size={12} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <Sparkles size={12} color="var(--accent-amber)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <span>{day.notes}</span>
               </div>
             )}
 
             {/* Card Footer with Quick Swap Trigger */}
             <div className="day-card-footer">
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 {day.status_label}
               </span>
               <button
@@ -248,7 +228,7 @@ export default function MasterSchedule({
                 onClick={() => onOpenSwapModal(day.id, 'evening', day.evening_plan)}
               >
                 <ArrowLeftRight size={13} />
-                <span>Swap Slot</span>
+                <span>Quick Swap Dialog</span>
               </button>
             </div>
           </article>

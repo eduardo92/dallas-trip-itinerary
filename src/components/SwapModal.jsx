@@ -56,22 +56,22 @@ export default function SwapModal({
 
         <div style={{ marginBottom: '1.25rem' }}>
           {/* Source Slot Box */}
-          <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '10px', padding: '0.85rem', marginBottom: '1rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ background: 'var(--status-yellow-bg)', border: '1px solid var(--status-yellow-border)', borderRadius: '10px', padding: '0.85rem', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--status-yellow-text)', textTransform: 'uppercase', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
               <span>Source: Day {sourceDay?.day_number} ({sourceDay?.date_str})</span>
-              <span style={{ color: '#fbbf24' }}>{SLOT_LABELS[sourceInfo.slotType] || sourceInfo.slotType}</span>
+              <span>{SLOT_LABELS[sourceInfo.slotType] || sourceInfo.slotType}</span>
             </div>
-            <div style={{ fontSize: '0.875rem', color: '#f8fafc', lineHeight: 1.4 }}>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.4, fontWeight: 500 }}>
               {sourceText}
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <div style={{ height: '1px', flex: 1, background: 'rgba(245, 158, 11, 0.2)' }}></div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#f59e0b', padding: '0.2rem 0.6rem', borderRadius: '9999px', background: 'rgba(245, 158, 11, 0.1)' }}>
+          <div style={{ textAlign: 'center', margin: '0.5rem 0', color: 'var(--accent-amber)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <div style={{ height: '1px', flex: 1, background: 'var(--border-medium)' }}></div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--status-yellow-text)', padding: '0.2rem 0.6rem', borderRadius: '9999px', background: 'var(--status-yellow-bg)' }}>
               ⇄ Swap With Target
             </span>
-            <div style={{ height: '1px', flex: 1, background: 'rgba(245, 158, 11, 0.2)' }}></div>
+            <div style={{ height: '1px', flex: 1, background: 'var(--border-medium)' }}></div>
           </div>
 
           {/* Target Day Selection */}
@@ -106,9 +106,9 @@ export default function SwapModal({
                   style={{
                     padding: '0.6rem 0.4rem',
                     borderRadius: '8px',
-                    border: targetSlot === slot.key ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
-                    background: targetSlot === slot.key ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255,255,255,0.03)',
-                    color: targetSlot === slot.key ? '#fbbf24' : '#94a3b8',
+                    border: targetSlot === slot.key ? '1px solid var(--accent-amber)' : '1px solid var(--border-medium)',
+                    background: targetSlot === slot.key ? 'var(--status-yellow-bg)' : 'var(--bg-surface)',
+                    color: targetSlot === slot.key ? 'var(--status-yellow-text)' : 'var(--text-secondary)',
                     fontSize: '0.8rem',
                     fontWeight: 700,
                     textAlign: 'center',
@@ -123,12 +123,12 @@ export default function SwapModal({
           </div>
 
           {/* Target Slot Current Content Preview */}
-          <div style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '0.85rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
               <span>Target: Day {targetDay?.day_number} ({targetDay?.date_str})</span>
-              <span style={{ color: '#38bdf8' }}>{SLOT_SHORT[targetSlot]}</span>
+              <span style={{ color: 'var(--slot-morning-text)' }}>{SLOT_SHORT[targetSlot]}</span>
             </div>
-            <div style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: 1.4 }}>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.4 }}>
               {targetText}
             </div>
           </div>

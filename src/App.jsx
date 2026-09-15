@@ -5,7 +5,6 @@ import MasterSchedule from './components/MasterSchedule';
 import CalendarGridView from './components/CalendarGridView';
 import UltimatePlannerBanner from './components/UltimatePlannerBanner';
 import IdeaBucket from './components/IdeaBucket';
-
 import SwapModal from './components/SwapModal';
 import EditModal from './components/EditModal';
 import DallasGuideModal from './components/DallasGuideModal';
@@ -19,35 +18,49 @@ import {
   saveStoredDays,
   saveStoredBucket,
   getLocalUserMode,
-  setLocalUserMode
+  setLocalUserMode,
+  getLocalTheme,
+  setLocalTheme
 } from './services/api';
 import { INITIAL_DAYS, INITIAL_BUCKET } from './data/defaultData';
 import { 
   Calendar, Search, Filter, Sparkles, Lightbulb, Trophy, 
-  CheckCircle, ArrowLeftRight, Heart
+  CheckCircle, ArrowLeftRight, Heart, X
 } from 'lucide-react';
 
 export default function App() {
   const [days, setDays] = useState(INITIAL_DAYS);
   const [bucketItems, setBucketItems] = useState(INITIAL_BUCKET);
   const [userMode, setUserMode] = useState(getLocalUserMode());
+  const [theme, setTheme] = useState(getLocalTheme());
   const [syncStatus, setSyncStatus] = useState('syncing');
   const [activeTab, setActiveTab] = useState('calendar'); // 'calendar', 'cards', 'bucket', 'all'
   const [filterMode, setFilterMode] = useState('all'); // 'all', 'yellow', 'green'
-
   const [searchQuery, setSearchQuery] = useState('');
   
   const [dragItem, setDragItem] = useState(null);
+  const [pickedSlot, setPickedSlot] = useState(null); // For 1-tap/click pick-to-swap: { dayId, dayNumber, slotType, slotLabel, text }
   const [swapModalInfo, setSwapModalInfo] = useState(null);
   const [editModalInfo, setEditModalInfo] = useState(null);
   const [isDallasGuideOpen, setIsDallasGuideOpen] = useState(false);
   const [isAiScoutOpen, setIsAiScoutOpen] = useState(false);
   const [notification, setNotification] = useState(null);
 
-
   const showNotification = (msg) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Sync theme with document attribute & localStorage
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    setLocalTheme(theme);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    showNotification(`Switched to ${nextTheme === 'light' ? '☀️ Light' : '🌙 Dark'} Mode`);
   };
 
   // Load cloud data on mount
@@ -72,7 +85,7 @@ export default function App() {
     showNotification(`Switched mode to ${mode === 'sister' ? '🌟 Sister' : '🤠 Eduardo'}`);
   };
 
-  // Slot swap handler (optimistic UI)
+  // Slot swap handler (optimistic UI + cloud sync)
   const handleSwapSlots = async (sourceDayId, sourceSlot, targetDayId, targetSlot) => {
     const sourceCol = sourceSlot === 'morning' ? 'morning_plan' : sourceSlot === 'evening' ? 'evening_plan' : 'night_plan';
     const targetCol = targetSlot === 'morning' ? 'morning_plan' : targetSlot === 'evening' ? 'evening_plan' : 'night_plan';
@@ -103,11 +116,32 @@ export default function App() {
 
     setDays(updatedDays);
     saveStoredDays(updatedDays);
-    showNotification(`Swapped Day ${sourceDay.day_number} (${sourceSlot}) with Day ${targetDay.day_number} (${targetSlot})`);
+    showNotification(`Swapped Day ${sourceDay.day_number} with Day ${targetDay.day_number}!`);
 
     setSyncStatus('syncing');
     await swapCloudSlots(sourceDayId, sourceSlot, targetDayId, targetSlot);
     setSyncStatus('synced');
+  };
+
+  // 1-Tap Pick-to-Swap logic
+  const handlePickSlot = (dayId, dayNumber, slotType, slotLabel, text) => {
+    if (!pickedSlot) {
+      // Pick up the slot
+      setPickedSlot({ dayId, dayNumber, slotType, slotLabel, text });
+      showNotification(`📍 Picked up Day ${dayNumber} (${slotLabel}). Click or tap any slot to swap!`);
+    } else if (pickedSlot.dayId === dayId && pickedSlot.slotType === slotType) {
+      // Clicked on the same picked slot -> Cancel
+      setPickedSlot(null);
+      showNotification('Cancelled slot move');
+    } else {
+      // Clicked on a different slot -> Swap immediately!
+      handleSwapSlots(pickedSlot.dayId, pickedSlot.slotType, dayId, slotType);
+      setPickedSlot(null);
+    }
+  };
+
+  const handleCancelPickSlot = () => {
+    setPickedSlot(null);
   };
 
   // Slot update handler
@@ -234,12 +268,12 @@ export default function App() {
           position: 'fixed',
           bottom: '24px',
           right: '24px',
-          background: 'rgba(17, 24, 39, 0.95)',
-          border: '1px solid rgba(245, 158, 11, 0.5)',
-          color: '#f8fafc',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--accent-amber)',
+          color: 'var(--text-primary)',
           padding: '0.75rem 1.25rem',
           borderRadius: '12px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
           zIndex: 9999,
           fontSize: '0.875rem',
           fontWeight: 600,
@@ -248,8 +282,23 @@ export default function App() {
           gap: '0.5rem',
           animation: 'slideUp 0.2s ease-out'
         }}>
-          <Sparkles size={16} color="#f59e0b" />
+          <Sparkles size={16} color="var(--accent-amber)" />
           <span>{notification}</span>
+        </div>
+      )}
+
+      {/* Sticky Pick-to-Swap Floating Bar */}
+      {pickedSlot && (
+        <div className="pick-to-swap-banner">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <ArrowLeftRight size={18} color="#f59e0b" />
+            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+              Moving <strong>Day {pickedSlot.dayNumber} ({pickedSlot.slotLabel})</strong>: Tap/click any slot to swap!
+            </span>
+          </div>
+          <button className="pick-to-swap-cancel-btn" onClick={handleCancelPickSlot}>
+            ✕ Cancel
+          </button>
         </div>
       )}
 
@@ -257,15 +306,16 @@ export default function App() {
       <Header
         userMode={userMode}
         setUserMode={handleUserModeChange}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         syncStatus={syncStatus}
         onOpenAiScout={() => setIsAiScoutOpen(true)}
-        onOpenDallasGuide={() => setIsDallasGuideOpen(true)}
+        onOpenDallasGuide={() => setIsDallasGuideOpen(false || true)}
         onResetItinerary={handleResetItinerary}
         daysCount={days.length}
         yellowCount={yellowCount}
         greenCount={greenCount}
       />
-
 
       {/* Cowboys Schedule & Conflict Widget */}
       <CowboysWidget />
@@ -318,7 +368,7 @@ export default function App() {
         {/* Search and Status Filters */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           {/* Status filter chips */}
-          <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.5)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+          <div style={{ display: 'flex', background: 'var(--bg-card)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-card)' }}>
             <button
               onClick={() => setFilterMode('all')}
               style={{
@@ -326,8 +376,8 @@ export default function App() {
                 borderRadius: '6px',
                 fontSize: '0.775rem',
                 fontWeight: 600,
-                background: filterMode === 'all' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                color: filterMode === 'all' ? '#f8fafc' : '#94a3b8'
+                background: filterMode === 'all' ? 'var(--bg-card-hover)' : 'transparent',
+                color: filterMode === 'all' ? 'var(--text-primary)' : 'var(--text-muted)'
               }}
             >
               All
@@ -339,8 +389,8 @@ export default function App() {
                 borderRadius: '6px',
                 fontSize: '0.775rem',
                 fontWeight: 600,
-                background: filterMode === 'yellow' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
-                color: filterMode === 'yellow' ? '#fbbf24' : '#94a3b8'
+                background: filterMode === 'yellow' ? 'var(--status-yellow-bg)' : 'transparent',
+                color: filterMode === 'yellow' ? 'var(--status-yellow-text)' : 'var(--text-muted)'
               }}
             >
               💼 Work-Fit
@@ -352,8 +402,8 @@ export default function App() {
                 borderRadius: '6px',
                 fontSize: '0.775rem',
                 fontWeight: 600,
-                background: filterMode === 'green' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
-                color: filterMode === 'green' ? '#34d399' : '#94a3b8'
+                background: filterMode === 'green' ? 'var(--status-green-bg)' : 'transparent',
+                color: filterMode === 'green' ? 'var(--status-green-text)' : 'var(--text-muted)'
               }}
             >
               🎉 PTO / Weekend
@@ -362,21 +412,22 @@ export default function App() {
 
           {/* Search box */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Search size={14} style={{ position: 'absolute', left: '10px', color: '#64748b' }} />
+            <Search size={14} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
             <input
               type="text"
               placeholder="Search plans or dates..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
-                background: 'rgba(15, 23, 42, 0.6)',
+                background: 'var(--bg-card)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '8px',
                 padding: '0.4rem 0.75rem 0.4rem 2rem',
                 fontSize: '0.8rem',
-                color: '#f8fafc',
+                color: 'var(--text-primary)',
                 outline: 'none',
-                width: '180px'
+                width: '180px',
+                boxShadow: 'var(--shadow-card)'
               }}
             />
           </div>
@@ -393,6 +444,8 @@ export default function App() {
           onUpdateSlot={handleUpdateSlot}
           dragItem={dragItem}
           setDragItem={setDragItem}
+          pickedSlot={pickedSlot}
+          onPickSlot={handlePickSlot}
         />
       )}
 
@@ -409,6 +462,8 @@ export default function App() {
           setDragItem={setDragItem}
           filterMode={filterMode}
           searchQuery={searchQuery}
+          pickedSlot={pickedSlot}
+          onPickSlot={handlePickSlot}
         />
       )}
 
@@ -438,10 +493,12 @@ export default function App() {
             onUpdateSlot={handleUpdateSlot}
             dragItem={dragItem}
             setDragItem={setDragItem}
+            pickedSlot={pickedSlot}
+            onPickSlot={handlePickSlot}
           />
 
           <div style={{ marginTop: '2.5rem' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: '#f8fafc' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)' }}>
               📋 Detailed Day-by-Day Slot Breakdown
             </h3>
             <MasterSchedule
@@ -455,6 +512,8 @@ export default function App() {
               setDragItem={setDragItem}
               filterMode={filterMode}
               searchQuery={searchQuery}
+              pickedSlot={pickedSlot}
+              onPickSlot={handlePickSlot}
             />
           </div>
 
@@ -473,8 +532,6 @@ export default function App() {
           </div>
         </>
       )}
-
-
 
       {/* Swap Modal */}
       <SwapModal
@@ -513,4 +570,3 @@ export default function App() {
     </div>
   );
 }
-

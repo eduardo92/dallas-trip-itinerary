@@ -62,7 +62,7 @@ export default function UltimatePlannerBanner({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Sparkles size={16} color="#f59e0b" />
-            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f8fafc' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Smart Dallas Suggestions for Your Trip:
             </span>
           </div>
