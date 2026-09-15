@@ -611,6 +611,7 @@ export default function App() {
         onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
         onMoveToBucket={handleMoveToBucket}
         onUpdateSlotAddress={handleUpdateSlotAddress}
+        onUpdateSlot={handleUpdateSlot}
       />
 
       {/* Add Manual Place Modal */}

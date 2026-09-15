@@ -18,7 +18,8 @@ export default function SlotDetailModal({
   onOpenSwapModal,
   onOpenEditModal,
   onMoveToBucket,
-  onUpdateSlotAddress
+  onUpdateSlotAddress,
+  onUpdateSlot
 }) {
   if (!isOpen || !slotDetail) return null;
 
@@ -27,10 +28,14 @@ export default function SlotDetailModal({
   const isPto = day?.day_number === 5 || day?.day_number === 12;
   const isGreen = day?.status === 'GREEN';
 
+  const [isEditingPlan, setIsEditingPlan] = useState(false);
+  const [currentPlanText, setCurrentPlanText] = useState(planText || '');
+  const [planTextInput, setPlanTextInput] = useState(planText || '');
+
   // Smart address lookup from the activity text or custom override
-  const lookedUp = lookupDallasPlace(planText);
+  const lookedUp = lookupDallasPlace(currentPlanText);
   const displayAddress = customAddress || lookedUp?.address || 'Dallas-Fort Worth Area, TX';
-  const venueTitle = lookedUp?.name || planText;
+  const venueTitle = lookedUp?.name || currentPlanText;
   const googleMapsUrl = customAddress 
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customAddress)}`
     : lookedUp?.googleMapsUrl;
@@ -46,6 +51,17 @@ export default function SlotDetailModal({
     navigator.clipboard.writeText(displayAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2200);
+  };
+
+  const handleSavePlan = (e) => {
+    e.preventDefault();
+    if (planTextInput.trim()) {
+      if (onUpdateSlot) {
+        onUpdateSlot(day.id, slotType, planTextInput.trim());
+      }
+      setCurrentPlanText(planTextInput.trim());
+    }
+    setIsEditingPlan(false);
   };
 
   const handleSaveAddress = (e) => {
@@ -88,12 +104,65 @@ export default function SlotDetailModal({
           padding: '1.1rem', 
           marginBottom: '1rem' 
         }}>
-          <div style={{ fontSize: '0.725rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-            Scheduled Plan
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+            <div style={{ fontSize: '0.725rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Scheduled Plan
+            </div>
+            <button
+              type="button"
+              className="cell-slot-btn"
+              style={{ fontSize: '0.725rem', padding: '0.2rem 0.55rem', gap: '0.3rem' }}
+              onClick={() => {
+                if (!isEditingPlan) setPlanTextInput(currentPlanText);
+                setIsEditingPlan(!isEditingPlan);
+              }}
+            >
+              <Edit3 size={11} />
+              <span>{isEditingPlan ? 'Cancel' : 'Quick Edit'}</span>
+            </button>
           </div>
-          <div style={{ fontSize: '0.975rem', color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.5 }}>
-            {planText}
-          </div>
+
+          {isEditingPlan ? (
+            <form onSubmit={handleSavePlan} style={{ marginTop: '0.4rem' }}>
+              <textarea
+                value={planTextInput}
+                onChange={e => setPlanTextInput(e.target.value)}
+                className="inline-edit-textarea"
+                style={{ minHeight: '80px', fontSize: '0.925rem' }}
+                autoFocus
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn-inline-cancel"
+                  onClick={() => {
+                    setPlanTextInput(currentPlanText);
+                    setIsEditingPlan(false);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-inline-save"
+                >
+                  <Check size={13} /> Save Plan
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div 
+              style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.5, cursor: 'pointer' }}
+              onClick={() => {
+                setPlanTextInput(currentPlanText);
+                setIsEditingPlan(true);
+              }}
+              title="Click to edit plan"
+            >
+              {currentPlanText}
+            </div>
+          )}
+
           {day?.notes && (
             <div style={{ marginTop: '0.65rem', paddingTop: '0.65rem', borderTop: '1px solid var(--border-subtle)', fontSize: '0.775rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <Sparkles size={12} color="var(--accent-amber)" />

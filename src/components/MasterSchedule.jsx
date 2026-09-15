@@ -79,12 +79,34 @@ export default function MasterSchedule({
     if (setDragItem) setDragItem(null);
   };
 
+  const [editingSlotKey, setEditingSlotKey] = useState(null);
+  const [inlineText, setInlineText] = useState('');
+
+  const startInlineEdit = (e, slotKey, text) => {
+    if (e) e.stopPropagation();
+    setEditingSlotKey(slotKey);
+    setInlineText(text);
+  };
+
+  const cancelInlineEdit = (e) => {
+    if (e) e.stopPropagation();
+    setEditingSlotKey(null);
+  };
+
+  const saveInlineEdit = (dayId, slotType) => {
+    if (inlineText.trim() && onUpdateSlot) {
+      onUpdateSlot(dayId, slotType, inlineText.trim());
+    }
+    setEditingSlotKey(null);
+  };
+
   const renderSlotBlock = (day, slotType, icon, label, color, planText) => {
     const slotKey = `${day.id}-${slotType}`;
     const isDragging = activeDragSlot === slotKey;
     const isDropOver = dragOverSlot === slotKey;
     const isPicked = pickedSlot && pickedSlot.dayId === day.id && pickedSlot.slotType === slotType;
     const isAwaitingTarget = pickedSlot && !isPicked;
+    const isEditing = editingSlotKey === slotKey;
     const lookedUp = lookupDallasPlace(planText);
 
     const handleSlotClick = () => {
@@ -94,6 +116,72 @@ export default function MasterSchedule({
         onOpenSlotDetail(day, slotType, planText);
       }
     };
+
+    if (isEditing) {
+      return (
+        <div 
+          key={slotType}
+          className={`time-slot ${slotType} editing`}
+          onClick={e => e.stopPropagation()}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              saveInlineEdit(day.id, slotType);
+            } else if (e.key === 'Escape') {
+              cancelInlineEdit(e);
+            }
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <div className={`slot-label ${slotType}`} style={{ color, display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 700 }}>
+              {icon}
+              <span>{label}</span>
+            </div>
+            <span style={{ fontSize: '0.675rem', color: 'var(--text-muted)' }}>Enter ↵ to save</span>
+          </div>
+
+          <textarea
+            autoFocus
+            className="inline-edit-textarea"
+            value={inlineText}
+            onChange={e => setInlineText(e.target.value)}
+            placeholder="Edit activity plan..."
+            rows={3}
+          />
+
+          <div className="inline-edit-actions" style={{ marginTop: '0.35rem' }}>
+            <div style={{ display: 'flex', gap: '0.35rem' }}>
+              <button
+                type="button"
+                className="btn-inline-save"
+                onClick={() => saveInlineEdit(day.id, slotType)}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="btn-inline-cancel"
+                onClick={cancelInlineEdit}
+              >
+                Cancel
+              </button>
+            </div>
+            <button
+              type="button"
+              className="slot-btn"
+              style={{ fontSize: '0.675rem', padding: '0.15rem 0.4rem' }}
+              title="Edit notes or details"
+              onClick={() => {
+                cancelInlineEdit();
+                onOpenEditModal(day.id, slotType, inlineText);
+              }}
+            >
+              + Notes
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div
@@ -106,7 +194,7 @@ export default function MasterSchedule({
         onDragLeave={e => handleDragLeave(e, slotKey)}
         onDrop={e => handleDrop(e, day.id, slotType)}
         onClick={handleSlotClick}
-        title={isAwaitingTarget ? `Click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently moving — click to cancel' : 'Click to view address & map, or drag to swap'}
+        title={isAwaitingTarget ? `Click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently moving — click to cancel' : 'Click for address & map • Double-click or click ✎ to edit'}
       >
         <div className="slot-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -132,11 +220,8 @@ export default function MasterSchedule({
             </button>
             <button
               className="slot-btn"
-              title="Edit slot plan"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenEditModal(day.id, slotType, planText);
-              }}
+              title="Quick edit slot"
+              onClick={(e) => startInlineEdit(e, slotKey, planText)}
             >
               <Edit3 size={12} />
             </button>
@@ -165,7 +250,13 @@ export default function MasterSchedule({
           </div>
         )}
 
-        <div className="slot-content-text">{planText}</div>
+        <div 
+          className="slot-content-text"
+          onDoubleClick={(e) => startInlineEdit(e, slotKey, planText)}
+          title="Click for address/map • Double-click to edit"
+        >
+          {planText}
+        </div>
 
         {/* Address Pill */}
         {lookedUp?.address && (

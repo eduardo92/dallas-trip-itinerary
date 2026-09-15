@@ -62,12 +62,34 @@ export default function CalendarGridView({
     }
   };
 
+  const [editingSlotKey, setEditingSlotKey] = useState(null);
+  const [inlineText, setInlineText] = useState('');
+
+  const startInlineEdit = (e, slotKey, text) => {
+    if (e) e.stopPropagation();
+    setEditingSlotKey(slotKey);
+    setInlineText(text);
+  };
+
+  const cancelInlineEdit = (e) => {
+    if (e) e.stopPropagation();
+    setEditingSlotKey(null);
+  };
+
+  const saveInlineEdit = (dayId, slotType) => {
+    if (inlineText.trim() && onUpdateSlot) {
+      onUpdateSlot(dayId, slotType, inlineText.trim());
+    }
+    setEditingSlotKey(null);
+  };
+
   const renderSlot = (day, slotType, icon, label, color, planText) => {
     const slotKey = `${day.id}-${slotType}`;
     const isDragging = activeDragKey === slotKey;
     const isDropOver = dragOverKey === slotKey;
     const isPicked = pickedSlot && pickedSlot.dayId === day.id && pickedSlot.slotType === slotType;
     const isAwaitingTarget = pickedSlot && !isPicked;
+    const isEditing = editingSlotKey === slotKey;
     const lookedUp = lookupDallasPlace(planText);
 
     const handleSlotClick = () => {
@@ -77,6 +99,73 @@ export default function CalendarGridView({
         onOpenSlotDetail(day, slotType, planText);
       }
     };
+
+    // If currently inline editing this slot
+    if (isEditing) {
+      return (
+        <div 
+          key={slotType}
+          className={`cell-slot ${slotType} editing`}
+          onClick={e => e.stopPropagation()}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              saveInlineEdit(day.id, slotType);
+            } else if (e.key === 'Escape') {
+              cancelInlineEdit(e);
+            }
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.675rem', fontWeight: 700, color, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+              {icon}
+              <span>{label}</span>
+            </div>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Enter ↵ to save</span>
+          </div>
+
+          <textarea
+            autoFocus
+            className="inline-edit-textarea"
+            value={inlineText}
+            onChange={e => setInlineText(e.target.value)}
+            placeholder="Edit activity plan..."
+            rows={3}
+          />
+
+          <div className="inline-edit-actions">
+            <div style={{ display: 'flex', gap: '0.35rem' }}>
+              <button
+                type="button"
+                className="btn-inline-save"
+                onClick={() => saveInlineEdit(day.id, slotType)}
+              >
+                <CheckCircle2 size={12} /> Save
+              </button>
+              <button
+                type="button"
+                className="btn-inline-cancel"
+                onClick={cancelInlineEdit}
+              >
+                Cancel
+              </button>
+            </div>
+            <button
+              type="button"
+              className="cell-slot-btn"
+              style={{ fontSize: '0.65rem', padding: '0.15rem 0.35rem' }}
+              title="Edit notes or details"
+              onClick={() => {
+                cancelInlineEdit();
+                onOpenEditModal(day.id, slotType, inlineText);
+              }}
+            >
+              + Notes
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div 
@@ -95,16 +184,16 @@ export default function CalendarGridView({
         }}
         onDrop={e => handleDrop(e, day.id, slotType)}
         onClick={handleSlotClick}
-        title={isAwaitingTarget ? `Tap/click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently picked up — click to cancel' : 'Click to view address & map, or drag to swap'}
+        title={isAwaitingTarget ? `Tap/click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently picked up — click to cancel' : 'Click for address & map • Double-click or click ✎ to edit'}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '2px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '2px', gap: '0.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', minWidth: 0 }}>
             <span className="drag-handle-grip" title="Drag to swap or move">
               <GripVertical size={11} />
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.675rem', fontWeight: 700, color, textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.675rem', fontWeight: 700, color, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
               {icon}
-              <span>{label}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>{label}</span>
             </div>
           </div>
 
@@ -123,11 +212,8 @@ export default function CalendarGridView({
             <button
               type="button"
               className="cell-slot-btn"
-              title="Edit Activity"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenEditModal(day.id, slotType, planText);
-              }}
+              title="Quick inline edit"
+              onClick={(e) => startInlineEdit(e, slotKey, planText)}
             >
               <Edit3 size={11} />
             </button>
@@ -146,7 +232,13 @@ export default function CalendarGridView({
           </div>
         )}
 
-        <div className="slot-mini-text">{planText}</div>
+        <div 
+          className="slot-mini-text"
+          onDoubleClick={(e) => startInlineEdit(e, slotKey, planText)}
+          title="Click to view address/map • Double-click to edit"
+        >
+          {planText}
+        </div>
 
         {/* Address & Venue Pill */}
         {lookedUp?.neighborhood && (
