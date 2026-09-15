@@ -9,6 +9,8 @@ import SwapModal from './components/SwapModal';
 import EditModal from './components/EditModal';
 import DallasGuideModal from './components/DallasGuideModal';
 import AiScoutModal from './components/AiScoutModal';
+import SlotDetailModal from './components/SlotDetailModal';
+import AddPlaceModal from './components/AddPlaceModal';
 import { 
   fetchItineraryFromCloud, 
   updateCloudSlot, 
@@ -25,7 +27,7 @@ import {
 import { INITIAL_DAYS, INITIAL_BUCKET } from './data/defaultData';
 import { 
   Calendar, Search, Filter, Sparkles, Lightbulb, Trophy, 
-  CheckCircle, ArrowLeftRight, Heart, X
+  CheckCircle, ArrowLeftRight, Heart, X, PlusCircle
 } from 'lucide-react';
 
 export default function App() {
@@ -42,13 +44,25 @@ export default function App() {
   const [pickedSlot, setPickedSlot] = useState(null); // For 1-tap/click pick-to-swap: { dayId, dayNumber, slotType, slotLabel, text }
   const [swapModalInfo, setSwapModalInfo] = useState(null);
   const [editModalInfo, setEditModalInfo] = useState(null);
+  const [slotDetailModalInfo, setSlotDetailModalInfo] = useState(null);
+  const [isAddPlaceModalOpen, setIsAddPlaceModalOpen] = useState(false);
   const [isDallasGuideOpen, setIsDallasGuideOpen] = useState(false);
   const [isAiScoutOpen, setIsAiScoutOpen] = useState(false);
   const [notification, setNotification] = useState(null);
 
+  // Custom addresses mapped by `${dayId}-${slotType}`
+  const [slotCustomAddresses, setSlotCustomAddresses] = useState(() => {
+    try {
+      const raw = localStorage.getItem('dallas_trip_custom_addresses_v1');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const showNotification = (msg) => {
     setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 3200);
   };
 
   // Sync theme with document attribute & localStorage
@@ -126,15 +140,12 @@ export default function App() {
   // 1-Tap Pick-to-Swap logic
   const handlePickSlot = (dayId, dayNumber, slotType, slotLabel, text) => {
     if (!pickedSlot) {
-      // Pick up the slot
       setPickedSlot({ dayId, dayNumber, slotType, slotLabel, text });
       showNotification(`📍 Picked up Day ${dayNumber} (${slotLabel}). Click or tap any slot to swap!`);
     } else if (pickedSlot.dayId === dayId && pickedSlot.slotType === slotType) {
-      // Clicked on the same picked slot -> Cancel
       setPickedSlot(null);
       showNotification('Cancelled slot move');
     } else {
-      // Clicked on a different slot -> Swap immediately!
       handleSwapSlots(pickedSlot.dayId, pickedSlot.slotType, dayId, slotType);
       setPickedSlot(null);
     }
@@ -142,6 +153,26 @@ export default function App() {
 
   const handleCancelPickSlot = () => {
     setPickedSlot(null);
+  };
+
+  // Open rich slot details modal (shows looked-up address, map link, and actions)
+  const handleOpenSlotDetail = (day, slotType, planText) => {
+    const key = `${day.id}-${slotType}`;
+    const customAddress = slotCustomAddresses[key];
+    setSlotDetailModalInfo({ day, slotType, planText, customAddress });
+  };
+
+  // Update custom address for a slot
+  const handleUpdateSlotAddress = (dayId, slotType, newAddress) => {
+    const key = `${dayId}-${slotType}`;
+    const updated = { ...slotCustomAddresses, [key]: newAddress };
+    setSlotCustomAddresses(updated);
+    try {
+      localStorage.setItem('dallas_trip_custom_addresses_v1', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error saving custom addresses:', e);
+    }
+    showNotification('Saved custom address for slot!');
   };
 
   // Slot update handler
@@ -174,9 +205,9 @@ export default function App() {
     const newItem = {
       id: `bucket-${Date.now()}`,
       title: planText.length > 50 ? planText.slice(0, 47) + '...' : planText,
-      category: 'Culture & Immersion',
+      category: 'Must-Sees Dallas',
       description: planText,
-      location: 'Dallas Area',
+      location: 'Dallas Area, TX',
       estimated_duration: '2-3 hours',
       best_time: slotType,
       status: 'bucket',
@@ -201,7 +232,16 @@ export default function App() {
 
     const planText = `${item.title}${item.location ? ` @ ${item.location}` : ''}`;
     await handleUpdateSlot(dayId, slot, planText);
+    if (item.location) {
+      handleUpdateSlotAddress(dayId, slot, item.location);
+    }
     showNotification(`Scheduled "${item.title}" to Day ${day.day_number} (${slot})`);
+  };
+
+  // Directly schedule a newly created place
+  const handleScheduleDirectly = async (item, dayId, slotType) => {
+    await handleScheduleItem(item, dayId, slotType);
+    await handleAddBucketItem(item);
   };
 
   // Add custom idea to bucket
@@ -248,6 +288,12 @@ export default function App() {
     }
     setDays(INITIAL_DAYS);
     setBucketItems(INITIAL_BUCKET);
+    setSlotCustomAddresses({});
+    try {
+      localStorage.removeItem('dallas_trip_custom_addresses_v1');
+    } catch (e) {
+      console.error(e);
+    }
     saveStoredDays(INITIAL_DAYS);
     saveStoredBucket(INITIAL_BUCKET);
 
@@ -310,7 +356,7 @@ export default function App() {
         onToggleTheme={handleToggleTheme}
         syncStatus={syncStatus}
         onOpenAiScout={() => setIsAiScoutOpen(true)}
-        onOpenDallasGuide={() => setIsDallasGuideOpen(false || true)}
+        onOpenDallasGuide={() => setIsDallasGuideOpen(true)}
         onResetItinerary={handleResetItinerary}
         daysCount={days.length}
         yellowCount={yellowCount}
@@ -365,8 +411,25 @@ export default function App() {
           </button>
         </div>
 
-        {/* Search and Status Filters */}
+        {/* Search, Add Place Button, and Filters */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          {/* Quick Add Place button */}
+          <button
+            className="btn-primary"
+            onClick={() => setIsAddPlaceModalOpen(true)}
+            style={{
+              padding: '0.4rem 0.85rem',
+              fontSize: '0.8rem',
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem'
+            }}
+          >
+            <PlusCircle size={14} />
+            <span>Add Place</span>
+          </button>
+
           {/* Status filter chips */}
           <div style={{ display: 'flex', background: 'var(--bg-card)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-card)' }}>
             <button
@@ -415,7 +478,7 @@ export default function App() {
             <Search size={14} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="Search plans or dates..."
+              placeholder="Search plans or places..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
@@ -440,6 +503,7 @@ export default function App() {
           days={days}
           onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
           onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+          onOpenSlotDetail={handleOpenSlotDetail}
           onSwapSlots={handleSwapSlots}
           onUpdateSlot={handleUpdateSlot}
           dragItem={dragItem}
@@ -458,6 +522,7 @@ export default function App() {
           onMoveToBucket={handleMoveToBucket}
           onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
           onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+          onOpenSlotDetail={handleOpenSlotDetail}
           dragItem={dragItem}
           setDragItem={setDragItem}
           filterMode={filterMode}
@@ -477,6 +542,7 @@ export default function App() {
           onAddBucketItem={handleAddBucketItem}
           onDeleteBucketItem={handleDeleteBucketItem}
           onOpenAiScout={() => setIsAiScoutOpen(true)}
+          onOpenAddPlace={() => setIsAddPlaceModalOpen(true)}
           userMode={userMode}
           setDragItem={setDragItem}
         />
@@ -489,6 +555,7 @@ export default function App() {
             days={days}
             onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
             onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+            onOpenSlotDetail={handleOpenSlotDetail}
             onSwapSlots={handleSwapSlots}
             onUpdateSlot={handleUpdateSlot}
             dragItem={dragItem}
@@ -508,6 +575,7 @@ export default function App() {
               onMoveToBucket={handleMoveToBucket}
               onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
               onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+              onOpenSlotDetail={handleOpenSlotDetail}
               dragItem={dragItem}
               setDragItem={setDragItem}
               filterMode={filterMode}
@@ -526,12 +594,34 @@ export default function App() {
               onAddBucketItem={handleAddBucketItem}
               onDeleteBucketItem={handleDeleteBucketItem}
               onOpenAiScout={() => setIsAiScoutOpen(true)}
+              onOpenAddPlace={() => setIsAddPlaceModalOpen(true)}
               userMode={userMode}
               setDragItem={setDragItem}
             />
           </div>
         </>
       )}
+
+      {/* Slot Details & Address Navigation Modal */}
+      <SlotDetailModal
+        isOpen={!!slotDetailModalInfo}
+        onClose={() => setSlotDetailModalInfo(null)}
+        slotDetail={slotDetailModalInfo}
+        onOpenSwapModal={(dayId, slotType, text) => setSwapModalInfo({ dayId, slotType, currentText: text })}
+        onOpenEditModal={(dayId, slotType, text) => setEditModalInfo({ dayId, slotType, currentText: text })}
+        onMoveToBucket={handleMoveToBucket}
+        onUpdateSlotAddress={handleUpdateSlotAddress}
+      />
+
+      {/* Add Manual Place Modal */}
+      <AddPlaceModal
+        isOpen={isAddPlaceModalOpen}
+        onClose={() => setIsAddPlaceModalOpen(false)}
+        onAddBucketItem={handleAddBucketItem}
+        onScheduleDirectly={handleScheduleDirectly}
+        days={days}
+        userMode={userMode}
+      />
 
       {/* Swap Modal */}
       <SwapModal

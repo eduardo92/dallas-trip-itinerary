@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { 
   Sun, Moon, Sunset, ArrowLeftRight, Edit3, Trash2, BookmarkPlus, 
-  Sparkles, Heart, AlertCircle, Info, Calendar as CalIcon, Check, Copy, GripVertical
+  Sparkles, Heart, AlertCircle, Info, Calendar as CalIcon, Check, Copy, GripVertical, MapPin
 } from 'lucide-react';
+import { lookupDallasPlace } from '../data/dallasPlaces';
 
 export default function MasterSchedule({
   days,
@@ -11,6 +12,7 @@ export default function MasterSchedule({
   onMoveToBucket,
   onOpenSwapModal,
   onOpenEditModal,
+  onOpenSlotDetail,
   dragItem,
   setDragItem,
   filterMode,
@@ -83,10 +85,13 @@ export default function MasterSchedule({
     const isDropOver = dragOverSlot === slotKey;
     const isPicked = pickedSlot && pickedSlot.dayId === day.id && pickedSlot.slotType === slotType;
     const isAwaitingTarget = pickedSlot && !isPicked;
+    const lookedUp = lookupDallasPlace(planText);
 
     const handleSlotClick = () => {
       if (pickedSlot) {
         onPickSlot(day.id, day.day_number, slotType, label, planText);
+      } else if (onOpenSlotDetail) {
+        onOpenSlotDetail(day, slotType, planText);
       }
     };
 
@@ -101,7 +106,7 @@ export default function MasterSchedule({
         onDragLeave={e => handleDragLeave(e, slotKey)}
         onDrop={e => handleDrop(e, day.id, slotType)}
         onClick={handleSlotClick}
-        title={isAwaitingTarget ? `Click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently moving — click to cancel' : 'Drag to swap, or click ⇄ to pick up'}
+        title={isAwaitingTarget ? `Click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently moving — click to cancel' : 'Click to view address & map, or drag to swap'}
       >
         <div className="slot-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -161,6 +166,16 @@ export default function MasterSchedule({
         )}
 
         <div className="slot-content-text">{planText}</div>
+
+        {/* Address Pill */}
+        {lookedUp?.address && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.725rem', color: 'var(--text-muted)', marginTop: '0.35rem', paddingTop: '0.25rem', borderTop: '1px solid var(--border-subtle)' }}>
+            <MapPin size={11} color="var(--accent-amber)" />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {lookedUp.address}
+            </span>
+          </div>
+        )}
       </div>
     );
   };

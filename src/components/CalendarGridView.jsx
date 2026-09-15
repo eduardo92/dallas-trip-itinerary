@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { 
   Calendar as CalIcon, Sun, Sunset, Moon, Sparkles, AlertCircle, 
-  ArrowLeftRight, Edit3, GripVertical, CheckCircle2
+  ArrowLeftRight, Edit3, GripVertical, CheckCircle2, MapPin
 } from 'lucide-react';
+import { lookupDallasPlace } from '../data/dallasPlaces';
 
 export default function CalendarGridView({
   days,
   onOpenSwapModal,
   onOpenEditModal,
+  onOpenSlotDetail,
   onSwapSlots,
   onUpdateSlot,
   dragItem,
@@ -66,10 +68,13 @@ export default function CalendarGridView({
     const isDropOver = dragOverKey === slotKey;
     const isPicked = pickedSlot && pickedSlot.dayId === day.id && pickedSlot.slotType === slotType;
     const isAwaitingTarget = pickedSlot && !isPicked;
+    const lookedUp = lookupDallasPlace(planText);
 
     const handleSlotClick = () => {
       if (pickedSlot) {
         onPickSlot(day.id, day.day_number, slotType, label, planText);
+      } else if (onOpenSlotDetail) {
+        onOpenSlotDetail(day, slotType, planText);
       }
     };
 
@@ -90,7 +95,7 @@ export default function CalendarGridView({
         }}
         onDrop={e => handleDrop(e, day.id, slotType)}
         onClick={handleSlotClick}
-        title={isAwaitingTarget ? `Tap/click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently picked up — click to cancel' : 'Drag to swap, or tap ⇄ to pick up'}
+        title={isAwaitingTarget ? `Tap/click to swap here with Day ${pickedSlot.dayNumber} (${pickedSlot.slotLabel})` : isPicked ? 'Currently picked up — click to cancel' : 'Click to view address & map, or drag to swap'}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '2px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -142,6 +147,16 @@ export default function CalendarGridView({
         )}
 
         <div className="slot-mini-text">{planText}</div>
+
+        {/* Address & Venue Pill */}
+        {lookedUp?.neighborhood && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.675rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+            <MapPin size={10} color="var(--accent-amber)" />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {lookedUp.neighborhood}
+            </span>
+          </div>
+        )}
       </div>
     );
   };
@@ -196,7 +211,7 @@ export default function CalendarGridView({
                     </div>
                   )}
 
-                  {/* 3 Dedicated Slots (Daytime, After-Work, Night) with Slot-Level Drag & Drop and Tap-to-Swap */}
+                  {/* 3 Dedicated Slots */}
                   <div className="cell-slots-container">
                     {renderSlot(day, 'morning', <Sun size={11} />, 'Daytime', '#0284c7', day.morning_plan)}
                     {renderSlot(day, 'evening', <Sunset size={11} />, 'After-Work', '#ea580c', day.evening_plan)}
